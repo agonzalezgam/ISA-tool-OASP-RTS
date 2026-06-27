@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ISA – Instantaneous Self Assessment</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --text: #111111;
+    --border: #cccccc;
+    --border-dark: #555555;
+    --btn-bg: #111111;
+    --btn-text: #ffffff;
+    --btn-hover: #333333;
+    --danger: #b00000;
+    --ok: #1b7a35;
+    --warn: #9a6a00;
+    --muted: #666666;
+    --card-bg: #f7f7f7;
+    --radius: 4px;
+    --font: 'Courier New', Courier, monospace;
+    --font-ui: system-ui, -apple-system, sans-serif;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: var(--font-ui); min-height: 100vh; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* HEADER */
+  #header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; border-bottom: 2px solid var(--text);
+    position: sticky; top: 0; background: var(--bg); z-index: 100; gap: 14px; flex-wrap: wrap;
+  }
+  #header h1 { font-size: .95rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+  #header .right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  #clock { font-family: var(--font); font-size: 1rem; font-weight: 700; letter-spacing: .05em; }
+
+  /* SYNC PILL */
+  #sync-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: .72rem; font-weight: 700; letter-spacing: .04em;
+    border: 1.5px solid var(--border-dark); border-radius: 20px; padding: 4px 10px; cursor: pointer;
+    user-select: none;
+  }
+  #sync-pill .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  #sync-pill.ok .dot { background: var(--ok); }
+  #sync-pill.pending .dot { background: var(--warn); }
+  #sync-pill.off .dot { background: var(--muted); }
+  #sync-pill.err .dot { background: var(--danger); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 10px 18px; background: var(--btn-bg); color: var(--btn-text);
+    border: 2px solid var(--btn-bg); border-radius: var(--radius);
+    font-size: .88rem; font-weight: 600; cursor: pointer; letter-spacing: .03em;
+    transition: background .15s, color .15s; user-select: none;
+  }
+  .btn:hover { background: var(--btn-hover); border-color: var(--btn-hover); }
+  .btn.outline { background: transparent; color: var(--text); border-color: var(--text); }
+  .btn.outline:hover { background: #f0f0f0; }
+  .btn.danger { background: var(--danger); border-color: var(--danger); }
+  .btn.danger:hover { background: #8a0000; border-color: #8a0000; }
+  .btn.small { padding: 6px 12px; font-size: .78rem; }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* LIST SCREEN */
+  #screen-list { padding: 24px 20px; }
+  #screen-list h2 { font-size: 1.2rem; margin-bottom: 4px; }
+  #screen-list p.sub { color: var(--muted); font-size: .86rem; margin-bottom: 20px; }
+
+  #exercise-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .ex-card {
+    border: 2px solid var(--border); border-radius: var(--radius); padding: 12px 10px;
+    cursor: pointer; transition: border-color .15s, background .15s; user-select: none;
+  }
+  .ex-card:hover { border-color: var(--text); background: #f5f5f5; }
+  .ex-card.selected { border-color: var(--text); background: var(--text); color: var(--btn-text); }
+  .ex-card .ex-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .ex-card .ex-num { font-size: 1.05rem; font-weight: 700; font-family: var(--font); }
+  .ex-card .ex-ctrl { font-size: .72rem; opacity: .7; }
+  .ex-card .ex-code { font-size: .68rem; margin-top: 4px; opacity: .7; word-break: break-word; line-height: 1.3; }
+  .ex-card.done { border-style: dashed; opacity: .6; }
+  .ex-card.done .ex-num::after { content: ' ✓'; }
+
+  #start-panel {
+    margin-top: 22px; padding: 18px 20px; border: 2px solid var(--text); border-radius: var(--radius);
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  }
+  #start-panel .info { flex: 1; min-width: 200px; }
+  #start-panel .info strong { font-size: 1.05rem; }
+  #start-panel .info small { display: block; color: var(--muted); font-size: .84rem; margin-top: 3px; }
+
+  /* RUN SCREEN */
+  #screen-run { padding: 22px 20px; }
+  #run-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+  #run-header h2 { font-size: 1.15rem; font-weight: 700; }
+  #run-header .run-meta { color: var(--muted); font-size: .84rem; }
+  #run-header .spacer { flex: 1; }
+
+  #controllers-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+  .ctrl-card {
+    border: 2px solid var(--border); border-radius: var(--radius); padding: 18px 14px;
+    background: var(--card-bg); text-align: center;
+  }
+  .ctrl-card.queued { border-color: var(--border-dark); background: #efefef; }
+  .ctrl-card.assessing { border-color: var(--text); border-width: 3px; background: #fff8e1; }
+  .ctrl-card h3 { font-size: .8rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 10px; color: var(--muted); }
+  .ctrl-card .ctrl-name { font-size: .98rem; font-weight: 700; margin-bottom: 12px; }
+  .ctrl-card .countdown { font-family: var(--font); font-size: 1.9rem; font-weight: 700; letter-spacing: .03em; }
+  .ctrl-card .countdown.urgent { color: var(--danger); }
+  .ctrl-card .ctrl-status { font-size: .76rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
+  .ctrl-card .last-score { margin-top: 9px; font-size: .8rem; color: var(--muted); }
+  .ctrl-card .last-score span { font-weight: 700; color: var(--text); }
+  .queue-badge {
+    display: inline-block; background: var(--text); color: var(--btn-text); font-size: .68rem;
+    font-weight: 700; border-radius: 2px; padding: 2px 6px; letter-spacing: .04em;
+  }
+
+  #log-bar {
+    margin-top: 26px; padding: 13px 18px; border: 1px solid var(--border); border-radius: var(--radius);
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--card-bg);
+  }
+  #log-bar .log-info { flex: 1; font-size: .84rem; color: var(--muted); }
+  #log-bar .log-info strong { color: var(--text); }
+
+  /* MODALS */
+  .overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55);
+    z-index: 500; align-items: center; justify-content: center; padding: 16px;
+  }
+  .overlay.open { display: flex; }
+  .modal-box {
+    background: var(--bg); border: 3px solid var(--text); border-radius: var(--radius);
+    padding: 32px 34px; max-width: 460px; width: 100%; text-align: center;
+  }
+  .modal-box.wide { max-width: 560px; text-align: left; }
+  #modal-box .modal-label { font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  #modal-box .modal-question { font-size: 1.2rem; font-weight: 700; line-height: 1.35; margin-bottom: 8px; }
+  #modal-box .modal-scale { font-size: .78rem; color: var(--muted); margin-bottom: 26px; }
+  #modal-box .modal-scale em { font-style: normal; font-weight: 600; color: var(--text); }
+  #rating-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .rating-btn {
+    width: 60px; height: 60px; font-size: 1.5rem; font-weight: 700; font-family: var(--font);
+    border: 2px solid var(--text); border-radius: var(--radius); background: var(--bg); cursor: pointer;
+    transition: background .12s; display: flex; align-items: center; justify-content: center;
+  }
+  .rating-btn:hover { background: var(--text); color: var(--btn-text); }
+  #modal-queue-note { font-size: .76rem; color: var(--muted); margin-top: 2px; }
+
+  /* SETTINGS / CONFIRM */
+  .modal-box h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 14px; }
+  .modal-box p.note { font-size: .86rem; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: .8rem; font-weight: 600; margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; padding: 9px 11px; border: 2px solid var(--border); border-radius: var(--radius);
+    font-size: .9rem; font-family: var(--font-ui);
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--text); }
+  .field small { display: block; color: var(--muted); font-size: .74rem; margin-top: 4px; line-height: 1.4; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+
+  .banner {
+    margin: 0; padding: 12px 20px; background: #fff8e1; border-bottom: 2px solid var(--warn);
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: .86rem;
+  }
+  .banner .b-text { flex: 1; }
+  .banner.hidden { display: none; }
+
+  @media (max-width: 520px) {
+    #exercise-grid { grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); }
+    #controllers-grid { grid-template-columns: 1fr 1fr; }
+    .modal-box { padding: 22px 16px; }
+    .rating-btn { width: 50px; height: 50px; font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <h1>ISA · Instantaneous Self Assessment</h1>
+  <div class="right">
+    <div id="clock">--:--:-- | ---</div>
+    <div id="sync-pill" class="off" title="Cloud sync status — click for details">
+      <span class="dot"></span><span id="sync-text">Sync off</span>
+    </div>
+    <button class="btn outline small" id="btn-settings">⚙ Settings</button>
+    <button class="btn outline small" id="btn-export">⬇ Export</button>
+  </div>
+</div>
+
+<!-- RESUME BANNER -->
+<div class="banner hidden" id="resume-banner">
+  <div class="b-text" id="resume-text">An exercise was in progress.</div>
+  <button class="btn small" id="btn-resume">Resume exercise</button>
+  <button class="btn outline small" id="btn-discard">Discard</button>
+</div>
+
+<!-- LIST SCREEN -->
+<div id="screen-list" class="screen active">
+  <h2>Select an Exercise</h2>
+  <p class="sub">Tap an exercise, then press Start the moment the exercise begins.</p>
+  <div id="exercise-grid"></div>
+  <div id="start-panel" style="display:none">
+    <div class="info">
+      <strong id="start-label">—</strong>
+      <small id="start-sub">—</small>
+    </div>
+    <button class="btn" id="btn-start">▶ Start Exercise</button>
+  </div>
+</div>
+
+<!-- RUN SCREEN -->
+<div id="screen-run" class="screen">
+  <div id="run-header">
+    <div>
+      <h2 id="run-title">—</h2>
+      <div class="run-meta" id="run-meta">—</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn outline danger" id="btn-stop">■ Stop Exercise</button>
+  </div>
+  <div id="controllers-grid"></div>
+  <div id="log-bar">
+    <div class="log-info">Log: <strong id="log-count">0</strong> total · <strong id="log-pending">0</strong> awaiting cloud sync.</div>
+    <button class="btn outline small" id="btn-sync-run">↻ Sync now</button>
+    <button class="btn outline small" id="btn-export-run">⬇ Export</button>
+  </div>
+</div>
+
+<!-- ASSESSMENT MODAL -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal-box" id="modal-box">
+    <div class="modal-label">ISA Assessment</div>
+    <div class="modal-question" id="modal-question">—</div>
+    <div class="modal-scale"><em>1</em> = Very manageable &nbsp;·&nbsp; <em>5</em> = Unmanageable</div>
+    <div id="rating-btns">
+      <button class="rating-btn" data-val="1">1</button>
+      <button class="rating-btn" data-val="2">2</button>
+      <button class="rating-btn" data-val="3">3</button>
+      <button class="rating-btn" data-val="4">4</button>
+      <button class="rating-btn" data-val="5">5</button>
+    </div>
+    <div id="modal-queue-note"></div>
+  </div>
+</div>
+
+<!-- STOP CONFIRM -->
+<div class="overlay" id="stop-modal">
+  <div class="modal-box">
+    <h3>Stop this exercise?</h3>
+    <p class="note">All timers stop. Your recorded assessments are already saved and will stay in the log. You can export or sync them from the main screen.</p>
+    <div class="modal-actions">
+      <button class="btn outline" id="btn-stop-cancel">Cancel</button>
+      <button class="btn danger" id="btn-stop-confirm">Stop &amp; Exit</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="overlay" id="settings-modal">
+  <div class="modal-box wide">
+    <h3>Settings</h3>
+    <div class="field">
+      <label for="set-station">Station / tablet name</label>
+      <input type="text" id="set-station" placeholder="" />
+      <small>Identifies which tablet recorded each entry. Optional — if left blank, a unique name is generated automatically for this tablet.</small>
+    </div>
+    <div class="field">
+      <label for="set-url">Google Sheets sync URL (Apps Script web app)</label>
+      <input type="text" id="set-url" placeholder="https://script.google.com/macros/s/..../exec" />
+      <small>Optional. If the URL is already built into the file, leave this blank. Fill it only to override the built-in one on this tablet.</small>
+    </div>
+    <div class="field">
+      <label for="set-interval">Assessment interval</label>
+      <select id="set-interval">
+        <option value="300">Live — every 5 minutes</option>
+        <option value="60">Every 1 minute</option>
+        <option value="30">Test — every 30 seconds</option>
+        <option value="10">Test — every 10 seconds</option>
+      </select>
+      <small>Use a test interval to rehearse, then switch to 5 minutes for real sessions.</small>
+    </div>
+    <div class="modal-actions">
+      <button class="btn outline" id="btn-test-sync">Test sync connection</button>
+      <button class="btn outline" id="btn-settings-cancel">Cancel</button>
+      <button class="btn" id="btn-settings-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  EXERCISE DATA  (from ATCOSperEX.csv)
+// ═══════════════════════════════════════════════════════════
+const EXERCISES = [
+  {n:1,  code:"BASE-FAM-1",              name:"Familiarisation: System 1",                                   atcos:5},
+  {n:2,  code:"BASE-FAM-2",              name:"Familiarisation: System 2",                                   atcos:5},
+  {n:3,  code:"BASE-SIM-1-110",          name:"Baseline Scenario 1",                                         atcos:5},
+  {n:4,  code:"BASE-SIM-1-140",          name:"Baseline Scenario - Increased Traffic 1",                     atcos:5},
+  {n:5,  code:"BASE-SIM-2-110",          name:"Baseline Scenario 2",                                         atcos:5},
+  {n:6,  code:"BASE-SIM-2-140",          name:"Baseline Scenario - Increased Traffic 2",                     atcos:5},
+  {n:7,  code:"BASE-FAM-CPDLC-1",        name:"Familiarisation: CPDLC 1 and Datalink",                       atcos:5},
+  {n:8,  code:"BASE-FAM-CPDLC-2",        name:"Familiarisation: CPDLC 2 and Datalink",                       atcos:5},
+  {n:9,  code:"MD-N-FAM-60",             name:"Familiarisation: Northern FIR (x2)",                          atcos:8},
+  {n:10, code:"MD-N-SIM-85",             name:"Northern FIR simulation (x2) - 2033",                         atcos:8},
+  {n:11, code:"MD-N-SIM-110",            name:"Northern FIR simulation (x2) - 2040",                         atcos:8},
+  {n:12, code:"MD-N-DESIGN-110",         name:"Sector boundary enhancements 1",                              atcos:8},
+  {n:13, code:"MD-DUB-FAM-60",           name:"Familiarisation: Dubai + AUH Sequencing - Central FIR (x2)",  atcos:8},
+  {n:14, code:"MD-DUB-SIM-85",           name:"Dubai + AUH Sequencing - Central FIR (x2) - 2033",            atcos:8},
+  {n:15, code:"MD-DUB-SIM-110",          name:"Dubai + AUH Sequencing - Central FIR (x2) - 2040",            atcos:8},
+  {n:16, code:"MD-MCT-FAM-60",           name:"Familiarisation: Muscat Sectors (x2)",                        atcos:8},
+  {n:17, code:"MD-MCT-SIM-85",           name:"Muscat Sectors simulation (x2) - 2033",                       atcos:8},
+  {n:18, code:"MD-MCT-SIM-110",          name:"Muscat Sectors simulation (x2) - 2040",                       atcos:8},
+  {n:19, code:"MD-E-FAM-60",             name:"Familiarisation: East Sectors (x2)",                          atcos:8},
+  {n:20, code:"MD-E-SIM-85",             name:"East Sectors simulation (x2) - 2033",                         atcos:8},
+  {n:21, code:"MD-E-SIM-110",            name:"East Sectors simulation (x2) - 2040",                         atcos:8},
+  {n:22, code:"MD-FAM-ALLN-NOCPDLC-60",  name:"Familiarisation: All North FIR - No CPDLC",                   atcos:9},
+  {n:23, code:"MD-SIM-ALLN-NOCPDLC-85",  name:"All North FIR simulation - No CPDLC 1",                        atcos:9},
+  {n:24, code:"MD-SIM-ALLN-NOCPDLC-110", name:"All North FIR simulation - No CPDLC 2",                        atcos:9},
+  {n:25, code:"MD-FAM-ALLN-60",          name:"Familiarisation: All North FIR - CPDLC",                      atcos:9},
+  {n:26, code:"MD-SIM-ALLN-85",          name:"All North FIR simulation - CPDLC 1",                          atcos:9},
+  {n:27, code:"MD-SIM-ALLN-110",         name:"All North FIR simulation - CPDLC 2",                          atcos:9},
+  {n:28, code:"MD-FAM-ALLN-VM-60",       name:"Familiarisation: All North FIR - CPDLC - Vertical Merge",     atcos:7},
+  {n:29, code:"MD-SIM-ALLN-VM-85",       name:"All North FIR simulation - CPDLC 1 - Vertical Merge",         atcos:7},
+  {n:30, code:"MD-SIM-ALLN-VM-110-1",    name:"All North FIR simulation - CPDLC 2 - Vertical Merge",         atcos:7},
+  {n:31, code:"MD-SIM-ALLN-VM-110-2",    name:"All North FIR simulation - CPDLC 3 - Vertical Merge (OPTIONAL)", atcos:7},
+  {n:32, code:"MD-FAM-FRA/FUA-60",       name:"Familiarisation: FRA/FUA 1 - No TRA/TSA active (x2)",         atcos:8},
+  {n:33, code:"MD-SIM-FRA/FUA-110-A",    name:"FRA/FUA 1 - No TRA/TSA active (x2)",                          atcos:8},
+  {n:34, code:"MD-SIM-FRA/FUA-110-B",    name:"FRA/FUA 2 - All TRA/TSA active (x2)",                         atcos:8},
+  {n:35, code:"MD-FAM-DIN-FUA/FRA-60",   name:"Familiarisation: FRA/FUA 3 - Dynamic TRA/TSA activation (x2)", atcos:8},
+  {n:36, code:"MD-SIM-DIN-FUA/FRA-110",  name:"FRA/FUA 3 - Dynamic TRA/TSA activation (x2)",                 atcos:8},
+  {n:37, code:"MD-SIM-CONT-110-1",       name:"Contingency: Weather Re-routing 1",                          atcos:7},
+  {n:38, code:"MD-SIM-CONT-110-2",       name:"Contingency: Weather Re-routing 2",                          atcos:7},
+  {n:39, code:"MD-SIM-CONT-110-3",       name:"Sector Degraded: Jamming & Spoofing 1",                       atcos:7},
+  {n:40, code:"MD-SIM-CONT-110-4",       name:"Sector Degraded: Jamming & Spoofing 2",                       atcos:7},
+  {n:41, code:"FI-FAM-N-85",             name:"Familiarisation: First Implementation NORTH",                atcos:6},
+  {n:42, code:"FI-SIM-N-110",            name:"First Implementation NORTH",                                 atcos:6},
+  {n:43, code:"FI-FAM-C-85",             name:"Familiarisation: First Implementation CENTRAL",              atcos:4},
+  {n:44, code:"FI-SIM-C-110",            name:"First Implementation CENTRAL",                               atcos:4},
+  {n:45, code:"FI-FAM-S-85",             name:"Familiarisation: First Implementation SOUTH",                atcos:4},
+  {n:46, code:"FI-SIM-S-110",            name:"First Implementation SOUTH",                                 atcos:4},
+  {n:47, code:"FI-FAM-ALL-85",           name:"Familiarisation: First Implementation - All FIR",            atcos:4},
+  {n:48, code:"FI-SIM-ALL-1-85",         name:"First Implementation - All FIR 1",                           atcos:7},
+  {n:49, code:"FI-SIM-ALL-2-110",        name:"First Implementation - All FIR 2",                           atcos:7},
+  {n:50, code:"FI-SIM-ALL-3-110",        name:"First Implementation - All FIR 3",                           atcos:7},
+  {n:51, code:"FI-SIM-ALL-4-130",        name:"First Implementation - All FIR - Stress-test 1",             atcos:7},
+  {n:52, code:"FI-SIM-ALL-5-130",        name:"First Implementation - All FIR - Stress-test 2",             atcos:7},
+  {n:53, code:"FI-FAM-CDR-85",           name:"Familiarisation: Northern CDRs",                             atcos:8},
+  {n:54, code:"FI-SIM-CDR-110",          name:"Northern CDRs",                                              atcos:8},
+  {n:55, code:"FI-FAM-T-CDR-85",         name:"Familiarisation: Tactical CDRs",                             atcos:4},
+  {n:56, code:"FI-SIM-T-CDR-110",        name:"Tactical CDRs",                                              atcos:4},
+];
+const EX_BY_NUM = {};
+EXERCISES.forEach(e => EX_BY_NUM[e.n] = e);
+
+// ═══════════════════════════════════════════════════════════
+//  PERSISTENCE KEYS
+// ═══════════════════════════════════════════════════════════
+const K_CONFIG    = 'isa_config_v2';
+const K_LOG       = 'isa_log_v2';
+const K_RUN       = 'isa_run_v2';
+const K_COMPLETED = 'isa_completed_v2';
+
+function lsGet(key, fallback) {
+  try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); }
+  catch (e) { return fallback; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch (e) { console.error('localStorage write failed', e); alert('Warning: could not save locally. Check that browser storage is enabled.'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ⬇⬇⬇  PASTE YOUR GOOGLE SHEETS SYNC URL HERE  ⬇⬇⬇
+//  Set this once, before hosting the file. Every tablet that opens
+//  the link will then sync automatically — no per-tablet setup.
+//  (A tablet can still override it in Settings if ever needed.)
+// ═══════════════════════════════════════════════════════════
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzs-T7XY9o2Ly_r_dbPP2n4xH4Q1QU6OTJ-CKTxKq17z4AWKibggRHDxwU0sirYxfvh/exec';
+const DEFAULT_INTERVAL_SEC = 300; // 300 = live 5-minute interval
+
+// ═══════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════
+let config = lsGet(K_CONFIG, null);
+if (!config) {
+  config = { station: '', scriptUrlOverride: '', intervalSec: DEFAULT_INTERVAL_SEC, deviceId: genId() };
+  lsSet(K_CONFIG, config);
+}
+if (!config.deviceId) { config.deviceId = genId(); lsSet(K_CONFIG, config); }
+if (config.intervalSec == null) { config.intervalSec = DEFAULT_INTERVAL_SEC; lsSet(K_CONFIG, config); }
+
+// Effective sync URL: a tablet's manual override wins; otherwise the hardcoded default.
+function scriptUrl() {
+  const o = (config.scriptUrlOverride || '').trim();
+  return o.length ? o : DEFAULT_SCRIPT_URL.trim();
+}
+// Effective station name: manual name wins; otherwise an auto unique id per tablet.
+function stationName() {
+  const s = (config.station || '').trim();
+  return s.length ? s : ('TABLET-' + String(config.deviceId).replace(/[^a-zA-Z0-9]/g,'').slice(0,5).toUpperCase());
+}
+
+function intervalMs() { return (config.intervalSec || DEFAULT_INTERVAL_SEC) * 1000; }
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let selectedExercise = null;
+let completedExercises = new Set(lsGet(K_COMPLETED, []));
+let logEntries = lsGet(K_LOG, []);
+
+let run = null;          // {exercise, startedAt, controllers:[...], queue:[...]}
+let tickInterval = null;
+let modalOpen = false;
+let currentAssessCtrl = null;
+
+// ═══════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════
+function genId() {
+  if (crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2,10);
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+function fmtTime(d){ return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function fmtTimestamp(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function fmtFilename(d){ return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`; }
+function fmtClock(secs){ const m=Math.floor(secs/60); const s=pad(secs%60); return `${m}:${s}`; }
+
+// ═══════════════════════════════════════════════════════════
+//  CLOCK
+// ═══════════════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const t = fmtTime(now);
+  const d = `${days[now.getDay()]} ${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
+  document.getElementById('clock').textContent = `${t} | ${d}`;
+}
+setInterval(updateClock, 500); updateClock();
+
+// ═══════════════════════════════════════════════════════════
+//  SCREENS
+// ═══════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXERCISE LIST
+// ═══════════════════════════════════════════════════════════
+function buildExerciseGrid() {
+  const grid = document.getElementById('exercise-grid');
+  grid.innerHTML = '';
+  EXERCISES.forEach(ex => {
+    const card = document.createElement('div');
+    card.className = 'ex-card' + (completedExercises.has(ex.n) ? ' done' : '');
+    card.dataset.ex = ex.n;
+    card.innerHTML = `
+      <div class="ex-top">
+        <span class="ex-num">EX ${pad(ex.n)}</span>
+        <span class="ex-ctrl">${ex.atcos} ATCO${ex.atcos!==1?'s':''}</span>
+      </div>
+      <div class="ex-code">${ex.code}</div>`;
+    card.addEventListener('click', () => selectExercise(ex.n));
+    grid.appendChild(card);
+  });
+}
+
+function selectExercise(num) {
+  selectedExercise = num;
+  document.querySelectorAll('.ex-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.ex-card[data-ex="${num}"]`)?.classList.add('selected');
+  const ex = EX_BY_NUM[num];
+  document.getElementById('start-label').textContent = `Exercise ${pad(num)} — ${ex.code}`;
+  document.getElementById('start-sub').textContent = `${ex.name} · ${ex.atcos} controllers · ISA every ${fmtClock(config.intervalSec)}`;
+  document.getElementById('start-panel').style.display = 'flex';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  START / RESUME EXERCISE
+// ═══════════════════════════════════════════════════════════
+document.getElementById('btn-start').addEventListener('click', () => {
+  if (!selectedExercise) return;
+  startExercise(selectedExercise);
+});
+
+function startExercise(exNum) {
+  const ex = EX_BY_NUM[exNum];
+  const now = Date.now();
+  run = {
+    exercise: exNum,
+    startedAt: now,
+    controllers: Array.from({length: ex.atcos}, (_, i) => ({
+      index: i,
+      label: `Controller ${i+1}`,
+      targetAt: now + intervalMs(),
+      lastScore: null,
+      assessCount: 0,
+      status: 'running',
+    })),
+    queue: [],
+  };
+  persistRun();
+  enterRunScreen(true);
+}
+
+function enterRunScreen(freshStart) {
+  const ex = EX_BY_NUM[run.exercise];
+  modalOpen = false; currentAssessCtrl = null;
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('run-title').textContent = `Exercise ${pad(run.exercise)} — ${ex.code}`;
+  document.getElementById('run-meta').textContent =
+    `${ex.name} · ${ex.atcos} controllers · ISA every ${fmtClock(config.intervalSec)}` +
+    (freshStart ? ` · Started ${fmtTime(new Date())}` : ` · Resumed ${fmtTime(new Date())}`);
+  buildControllersGrid();
+  updateLogCounts();
+  showScreen('screen-run');
+  startTicking();
+  // catch up immediately on any controllers already due (e.g. after refresh)
+  evaluateDue();
+}
+
+function startTicking() {
+  if (tickInterval) clearInterval(tickInterval);
+  tickInterval = setInterval(tick, 250);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CONTROLLER CARDS
+// ═══════════════════════════════════════════════════════════
+function buildControllersGrid() {
+  const grid = document.getElementById('controllers-grid');
+  grid.innerHTML = '';
+  run.controllers.forEach((ctrl, i) => {
+    const card = document.createElement('div');
+    card.className = 'ctrl-card';
+    card.id = `ctrl-card-${i}`;
+    card.innerHTML = `
+      <h3>Position ${i+1}</h3>
+      <div class="ctrl-name">${ctrl.label}</div>
+      <div class="countdown" id="cd-${i}">--:--</div>
+      <div class="ctrl-status" id="cs-${i}"></div>
+      <div class="last-score" id="ls-${i}"></div>`;
+    grid.appendChild(card);
+    updateCardDisplay(i);
+  });
+}
+
+function updateCardDisplay(i) {
+  const ctrl = run.controllers[i];
+  const card = document.getElementById(`ctrl-card-${i}`);
+  if (!card) return;
+  const cdEl = document.getElementById(`cd-${i}`);
+  const csEl = document.getElementById(`cs-${i}`);
+  const lsEl = document.getElementById(`ls-${i}`);
+
+  card.className = 'ctrl-card';
+  if (ctrl.status === 'queued') card.classList.add('queued');
+  if (ctrl.status === 'assessing') card.classList.add('assessing');
+
+  if (ctrl.status === 'running') {
+    const remMs = Math.max(0, ctrl.targetAt - Date.now());
+    const secs = Math.ceil(remMs / 1000);
+    cdEl.textContent = fmtClock(secs);
+    cdEl.className = 'countdown' + (remMs <= Math.min(30000, intervalMs()*0.2) ? ' urgent' : '');
+    csEl.textContent = '';
+  } else if (ctrl.status === 'queued') {
+    const posq = run.queue.indexOf(i) + 1;
+    cdEl.textContent = '—';
+    cdEl.className = 'countdown';
+    csEl.innerHTML = `<span class="queue-badge">QUEUE #${posq}</span>`;
+  } else if (ctrl.status === 'assessing') {
+    cdEl.textContent = '—';
+    cdEl.className = 'countdown';
+    csEl.textContent = '⟳ Awaiting response…';
+  }
+
+  lsEl.innerHTML = ctrl.lastScore !== null
+    ? `Last: <span>${ctrl.lastScore}/5</span> (#${ctrl.assessCount})` : '';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TICK  (absolute-time based — robust to sleep/throttle)
+// ═══════════════════════════════════════════════════════════
+function tick() {
+  if (!run) return;
+  evaluateDue();
+  run.controllers.forEach((c, i) => updateCardDisplay(i));
+}
+
+function evaluateDue() {
+  const now = Date.now();
+  let changed = false;
+  run.controllers.forEach((ctrl, i) => {
+    if (ctrl.status === 'running' && now >= ctrl.targetAt) {
+      ctrl.status = 'queued';
+      run.queue.push(i);
+      changed = true;
+    }
+  });
+  if (changed) { persistRun(); tryOpenModal(); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ASSESSMENT MODAL
+// ═══════════════════════════════════════════════════════════
+function tryOpenModal() {
+  if (modalOpen || !run || run.queue.length === 0) return;
+  const ctrlIndex = run.queue.shift();
+  currentAssessCtrl = ctrlIndex;
+  modalOpen = true;
+  const ctrl = run.controllers[ctrlIndex];
+  ctrl.status = 'assessing';
+  persistRun();
+  updateCardDisplay(ctrlIndex);
+  document.getElementById('modal-question').textContent =
+    `What is ${ctrl.label}'s self-assessed workload?`;
+  updateQueueNote();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function submitRating(val) {
+  if (currentAssessCtrl === null || !run) return;
+  const ctrl = run.controllers[currentAssessCtrl];
+  const now = new Date();
+  const ex = EX_BY_NUM[run.exercise];
+
+  const entry = {
+    entryId: genId(),
+    device: stationName(),
+    deviceId: config.deviceId,
+    exercise: run.exercise,
+    exerciseCode: ex.code,
+    controller: ctrl.index + 1,
+    rating: val,
+    assessmentNum: ctrl.assessCount + 1,
+    timestampUtc: now.toISOString(),
+    timestampLocal: fmtTimestamp(now),
+    synced: false,
+  };
+  logEntries.push(entry);
+  lsSet(K_LOG, logEntries);          // <-- saved locally the instant it's recorded
+
+  ctrl.lastScore = val;
+  ctrl.assessCount++;
+  ctrl.status = 'running';
+  ctrl.targetAt = Date.now() + intervalMs();   // restart this controller's countdown
+  persistRun();
+
+  currentAssessCtrl = null;
+  modalOpen = false;
+  document.getElementById('modal-overlay').classList.remove('open');
+
+  updateLogCounts();
+  pushEntry(entry);                  // fire cloud sync (non-blocking)
+  tryOpenModal();                    // open next queued controller, if any
+}
+
+function updateQueueNote() {
+  const el = document.getElementById('modal-queue-note');
+  const n = run ? run.queue.length : 0;
+  el.textContent = n > 0 ? `${n} more controller${n>1?'s':''} waiting in queue.` : '';
+}
+
+document.querySelectorAll('.rating-btn').forEach(btn => {
+  btn.addEventListener('click', () => submitRating(parseInt(btn.dataset.val)));
+});
+
+// ═══════════════════════════════════════════════════════════
+//  PERSIST RUN STATE
+// ═══════════════════════════════════════════════════════════
+function persistRun() { lsSet(K_RUN, run); }
+function clearRun() { run = null; try { localStorage.removeItem(K_RUN); } catch(e){} }
+
+// ═══════════════════════════════════════════════════════════
+//  STOP EXERCISE
+// ═══════════════════════════════════════════════════════════
+document.getElementById('btn-stop').addEventListener('click', () => {
+  document.getElementById('stop-modal').classList.add('open');
+});
+document.getElementById('btn-stop-cancel').addEventListener('click', () => {
+  document.getElementById('stop-modal').classList.remove('open');
+});
+document.getElementById('btn-stop-confirm').addEventListener('click', () => {
+  if (tickInterval) clearInterval(tickInterval);
+  document.getElementById('stop-modal').classList.remove('open');
+  document.getElementById('modal-overlay').classList.remove('open');
+  if (run) { completedExercises.add(run.exercise); lsSet(K_COMPLETED, [...completedExercises]); }
+  clearRun();
+  buildExerciseGrid();
+  showScreen('screen-list');
+  selectedExercise = null;
+  document.getElementById('start-panel').style.display = 'none';
+  flushUnsynced();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  RESUME BANNER
+// ═══════════════════════════════════════════════════════════
+function checkForResume() {
+  const saved = lsGet(K_RUN, null);
+  if (saved && saved.controllers && saved.controllers.length) {
+    run = saved;
+    const ex = EX_BY_NUM[run.exercise];
+    document.getElementById('resume-text').textContent =
+      `Exercise ${pad(run.exercise)} (${ex ? ex.code : ''}) was in progress. Resume where it left off?`;
+    document.getElementById('resume-banner').classList.remove('hidden');
+  }
+}
+document.getElementById('btn-resume').addEventListener('click', () => {
+  document.getElementById('resume-banner').classList.add('hidden');
+  // controllers that were mid-assessment when interrupted go back to the queue
+  run.controllers.forEach((c, i) => {
+    if (c.status === 'assessing') { c.status = 'queued'; if (!run.queue.includes(i)) run.queue.unshift(i); }
+  });
+  persistRun();
+  enterRunScreen(false);
+});
+document.getElementById('btn-discard').addEventListener('click', () => {
+  document.getElementById('resume-banner').classList.add('hidden');
+  if (run) { completedExercises.add(run.exercise); lsSet(K_COMPLETED, [...completedExercises]); }
+  clearRun();
+  buildExerciseGrid();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  CLOUD SYNC  (Google Apps Script web app → Google Sheet)
+// ═══════════════════════════════════════════════════════════
+let syncing = false;
+
+async function pushEntry(entry) {
+  const url = scriptUrl();
+  if (!url) { setSyncPill(); return; }
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // simple request, no CORS preflight
+      body: JSON.stringify(entry),
+      redirect: 'follow',
+      keepalive: true,
+    });
+    // Mark synced. (Server dedups by entryId, so an occasional false-negative just
+    //  causes a harmless retry, never a duplicate row.)
+    markSynced(entry.entryId);
+  } catch (e) {
+    // offline / failed — entry stays synced:false and will be retried
+    setSyncPill();
+  }
+}
+
+function markSynced(entryId) {
+  const e = logEntries.find(x => x.entryId === entryId);
+  if (e) { e.synced = true; lsSet(K_LOG, logEntries); }
+  updateLogCounts();
+  setSyncPill();
+}
+
+async function flushUnsynced() {
+  const url = scriptUrl();
+  if (syncing || !url) { setSyncPill(); return; }
+  const pending = logEntries.filter(e => !e.synced);
+  if (pending.length === 0) { setSyncPill(); return; }
+  syncing = true; setSyncPill();
+  for (const entry of pending) {
+    try {
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(entry),
+        redirect: 'follow',
+      });
+      entry.synced = true;
+      lsSet(K_LOG, logEntries);
+    } catch (e) { /* still offline; stop trying for now */ break; }
+  }
+  syncing = false;
+  updateLogCounts();
+  setSyncPill();
+}
+
+function pendingCount() { return logEntries.filter(e => !e.synced).length; }
+
+function setSyncPill() {
+  const pill = document.getElementById('sync-pill');
+  const txt = document.getElementById('sync-text');
+  pill.className = '';
+  if (!scriptUrl()) { pill.classList.add('off'); txt.textContent = 'Local only'; return; }
+  const pend = pendingCount();
+  if (!navigator.onLine) { pill.classList.add('err'); txt.textContent = `Offline · ${pend} queued`; return; }
+  if (syncing) { pill.classList.add('pending'); txt.textContent = 'Syncing…'; return; }
+  if (pend > 0) { pill.classList.add('pending'); txt.textContent = `${pend} queued`; return; }
+  pill.classList.add('ok'); txt.textContent = 'Synced';
+}
+
+document.getElementById('sync-pill').addEventListener('click', flushUnsynced);
+document.getElementById('btn-sync-run').addEventListener('click', flushUnsynced);
+window.addEventListener('online', flushUnsynced);
+window.addEventListener('offline', setSyncPill);
+setInterval(() => { if (pendingCount() > 0) flushUnsynced(); }, 30000); // periodic retry
+
+// ═══════════════════════════════════════════════════════════
+//  LOG COUNTS + EXPORT
+// ═══════════════════════════════════════════════════════════
+function updateLogCounts() {
+  const lc = document.getElementById('log-count');
+  const lp = document.getElementById('log-pending');
+  if (lc) lc.textContent = logEntries.length;
+  if (lp) lp.textContent = pendingCount();
+  setSyncPill();
+}
+
+function exportLog() {
+  if (logEntries.length === 0) { alert('No log entries yet.'); return; }
+  const headers = ['entryId','station','deviceId','exercise','exerciseCode','controller','rating','assessmentNum','timestampUtc','timestampLocal','syncedToCloud'];
+  const esc = v => {
+    const s = String(v ?? '');
+    return /[",\n;]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  const rows = logEntries.map(e => [
+    e.entryId, e.device, e.deviceId, e.exercise, e.exerciseCode, e.controller,
+    e.rating, e.assessmentNum, e.timestampUtc, e.timestampLocal, e.synced ? 'yes' : 'no'
+  ].map(esc).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `ISA_Log_${fmtFilename(new Date())}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+document.getElementById('btn-export').addEventListener('click', exportLog);
+document.getElementById('btn-export-run').addEventListener('click', exportLog);
+
+// ═══════════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════════
+function openSettings() {
+  const stEl = document.getElementById('set-station');
+  const urlEl = document.getElementById('set-url');
+  stEl.value = config.station || '';
+  stEl.placeholder = stationName() + '  (auto)';
+  urlEl.value = config.scriptUrlOverride || '';
+  urlEl.placeholder = DEFAULT_SCRIPT_URL
+    ? 'Using built-in URL — leave blank to keep it'
+    : 'https://script.google.com/macros/s/..../exec';
+  document.getElementById('set-interval').value = String(config.intervalSec || DEFAULT_INTERVAL_SEC);
+  document.getElementById('settings-modal').classList.add('open');
+}
+document.getElementById('btn-settings').addEventListener('click', openSettings);
+document.getElementById('btn-settings-cancel').addEventListener('click', () => {
+  document.getElementById('settings-modal').classList.remove('open');
+});
+document.getElementById('btn-settings-save').addEventListener('click', () => {
+  config.station = document.getElementById('set-station').value.trim();
+  config.scriptUrlOverride = document.getElementById('set-url').value.trim();
+  config.intervalSec = parseInt(document.getElementById('set-interval').value) || DEFAULT_INTERVAL_SEC;
+  lsSet(K_CONFIG, config);
+  document.getElementById('settings-modal').classList.remove('open');
+  setSyncPill();
+  if (selectedExercise) selectExercise(selectedExercise);
+  flushUnsynced();
+});
+document.getElementById('btn-test-sync').addEventListener('click', async () => {
+  const url = document.getElementById('set-url').value.trim() || DEFAULT_SCRIPT_URL.trim();
+  if (!url) { alert('No sync URL set. Either paste one here, or set DEFAULT_SCRIPT_URL in the file before hosting it.'); return; }
+  const probe = {
+    entryId: 'TEST-' + genId(), device: (document.getElementById('set-station').value.trim() || stationName()),
+    deviceId: config.deviceId, exercise: 0, exerciseCode: 'CONNECTION-TEST', controller: 0,
+    rating: 0, assessmentNum: 0, timestampUtc: new Date().toISOString(), timestampLocal: fmtTimestamp(new Date()),
+  };
+  try {
+    await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(probe), redirect:'follow' });
+    alert('Test sent. Check your Google Sheet for a row with code CONNECTION-TEST (exercise 0). If it appeared, sync is working — you can delete that test row.');
+  } catch (e) {
+    alert('Could not reach the sync URL. Check the URL, that the deployment is set to "Anyone", and your internet connection.\n\n' + e);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+buildExerciseGrid();
+updateLogCounts();
+setSyncPill();
+checkForResume();
+flushUnsynced();
+</script>
+</body>
+</html>
