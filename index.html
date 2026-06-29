@@ -113,13 +113,10 @@
   }
   .ctrl-card.queued { border-color: var(--border-dark); background: #efefef; }
   .ctrl-card.assessing { border-color: var(--text); border-width: 3px; background: #fff8e1; }
-  .ctrl-card.inactive { background: #f0f0f0; border-style: dashed; border-color: var(--border); opacity: .8; }
-  .ctrl-card.inactive .ctrl-name, .ctrl-card.inactive h3 { color: #9a9a9a; }
   .ctrl-card h3 { font-size: .8rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 10px; color: var(--muted); }
   .ctrl-card .ctrl-name { font-size: .98rem; font-weight: 700; margin-bottom: 12px; }
   .ctrl-card .countdown { font-family: var(--font); font-size: 1.9rem; font-weight: 700; letter-spacing: .03em; }
   .ctrl-card .countdown.urgent { color: var(--danger); }
-  .ctrl-card .countdown.off { color: #b0b0b0; font-size: 1.1rem; letter-spacing: .08em; }
   .ctrl-card .ctrl-status { font-size: .76rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
   .ctrl-card .last-score { margin-top: 9px; font-size: .8rem; color: var(--muted); }
   .ctrl-card .last-score span { font-weight: 700; color: var(--text); }
@@ -141,24 +138,28 @@
   .map-legend .lg { display: inline-flex; align-items: center; gap: 5px; font-size: .7rem; color: var(--muted); }
   .map-legend .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
   .map-legend .sw.act { background: #1f9d4d; }
-  .map-legend .sw.off { background: #c0392b; }
   .map-legend .sw.unused { background: #c4c8cd; }
   .map-legend .sw.sup { background: #3a4452; }
   #map-holder svg, #roster-map-holder svg { width: 100%; height: auto; display: block; }
 
   /* ROSTER MODAL */
-  #roster-body { display: flex; gap: 20px; align-items: flex-start; }
-  #roster-chips { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; }
-  #roster-map-holder { width: 170px; flex: 0 0 170px; }
-  .chip {
-    display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    border: 2px solid #1f9d4d; background: #eafaf0; color: #14622f;
-    border-radius: var(--radius); padding: 9px 12px; cursor: pointer; user-select: none;
-    font-size: .86rem; font-weight: 600; transition: all .12s;
+  #roster-body { display: flex; flex-direction: column; align-items: center; }
+  #roster-counter {
+    font-size: .92rem; font-weight: 700; margin-bottom: 10px; text-align: center;
   }
-  .chip .chip-state { font-size: .68rem; font-weight: 700; letter-spacing: .04em; }
-  .chip.off { border-color: #c0392b; background: #fdecea; color: #8a261b; }
-  .chip:hover { filter: brightness(.97); }
+  #roster-counter .cap { color: var(--muted); font-weight: 600; }
+  #roster-map-holder { width: 100%; display: flex; justify-content: center; }
+  #roster-map-holder svg { height: 56vh; max-height: 620px; width: auto; max-width: 100%; display: block; }
+  /* clickable positions on the roster map */
+  #roster-map-holder .map-pos { cursor: pointer; transition: opacity .12s; }
+  #roster-map-holder .map-pos:hover { opacity: .82; }
+  #roster-map-holder.at-cap .map-pos.is-inactive { cursor: not-allowed; opacity: .45; }
+  #roster-map-holder.at-cap .map-pos.is-inactive:hover { opacity: .45; }
+  .map-shortfall {
+    margin-top: 12px; padding: 9px 13px; border: 1.5px solid #c0392b; background: #fdecea;
+    color: #8a261b; border-radius: var(--radius); font-size: .8rem; font-weight: 600; line-height: 1.35;
+    text-align: center; max-width: 360px;
+  }
 
   #log-bar {
     margin-top: 26px; padding: 13px 18px; border: 1px solid var(--border); border-radius: var(--radius);
@@ -216,15 +217,13 @@
     #map-panel { width: 100%; flex: none; position: static; }
     #map-holder { max-width: 320px; margin: 0 auto; }
     #roster-body { flex-direction: column; }
-    #roster-map-holder { width: 100%; max-width: 220px; margin: 0 auto; }
-    #roster-chips { width: 100%; }
+    #roster-map-holder svg { height: auto; width: 100%; max-width: 260px; }
   }
   @media (max-width: 520px) {
     #exercise-grid { grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); }
     #controllers-grid { grid-template-columns: 1fr 1fr; }
     .modal-box { padding: 22px 16px; }
     .rating-btn { width: 50px; height: 50px; font-size: 1.25rem; }
-    #roster-chips { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -287,11 +286,11 @@
       <div class="map-title">SIM Room · Positions</div>
       <div class="map-legend">
         <span class="lg"><i class="sw act"></i>Active</span>
-        <span class="lg"><i class="sw off"></i>Absent</span>
-        <span class="lg"><i class="sw unused"></i>Not in use</span>
+        <span class="lg"><i class="sw unused"></i>Not active</span>
         <span class="lg"><i class="sw sup"></i>Supervisor</span>
       </div>
       <div id="map-holder"></div>
+      <div id="map-shortfall" class="map-shortfall" hidden></div>
     </aside>
   </div>
 </div>
@@ -320,8 +319,9 @@
     <h3 id="roster-title">Roster Check</h3>
     <p class="note" id="roster-note">Are all controllers present and in position? Tap any position that is <strong>not staffed</strong> to deactivate it — it will be greyed out and won't be measured. Active positions are shown in green.</p>
     <div id="roster-body">
-      <div id="roster-chips"></div>
+      <div id="roster-counter"></div>
       <div id="roster-map-holder"></div>
+      <div id="roster-shortfall" class="map-shortfall" hidden></div>
     </div>
     <div class="modal-actions">
       <button class="btn outline" id="btn-roster-cancel">Cancel</button>
@@ -444,7 +444,7 @@ EXERCISES.forEach(e => EX_BY_NUM[e.n] = e);
 // ═══════════════════════════════════════════════════════════
 const K_CONFIG    = 'isa_config_v2';
 const K_LOG       = 'isa_log_v2';
-const K_RUN       = 'isa_run_v2';
+const K_RUN       = 'isa_run_v3';
 const K_COMPLETED = 'isa_completed_v2';
 
 function lsGet(key, fallback) {
@@ -462,7 +462,7 @@ function lsSet(key, val) {
 //  the link will then sync automatically — no per-tablet setup.
 //  (A tablet can still override it in Settings if ever needed.)
 // ═══════════════════════════════════════════════════════════
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzs-T7XY9o2Ly_r_dbPP2n4xH4Q1QU6OTJ-CKTxKq17z4AWKibggRHDxwU0sirYxfvh/exec';
+const DEFAULT_SCRIPT_URL = '';   // e.g. 'https://script.google.com/macros/s/AKfy...../exec'
 const DEFAULT_INTERVAL_SEC = 300; // 300 = live 5-minute interval
 
 // ═══════════════════════════════════════════════════════════
@@ -566,40 +566,43 @@ function selectExercise(num) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  SIM ROOM MAP  (positions from SIM_Room_Map.svg)
-//  Coordinates normalised from the source SVG. Box = 163×163.
-//  Positions 1-5 down the left, 6-9 down the right, S = supervisor.
+//  SIM ROOM MAP
+//  6 positions down the left, 3 down the right (aligned to top),
+//  S = supervisor (reference only). Box = 163×163.
+//  Positions numbered 1..6 up the left, 7..9 down the right.
 // ═══════════════════════════════════════════════════════════
+const TOTAL_POSITIONS = 9;
 const MAP_BOX = 163;
 const MAP_POS = {
-  1: {x: 32.5,  y: 984.5}, 2: {x: 32.5,  y: 756.5}, 3: {x: 32.5,  y: 527.5},
-  4: {x: 32.5,  y: 298.5}, 5: {x: 32.5,  y: 69.5},
-  6: {x: 748.5, y: 69.5},  7: {x: 748.5, y: 298.5}, 8: {x: 748.5, y: 527.5},
-  9: {x: 748.5, y: 756.5},
+  1: {x: 32.5,  y: 1214.5}, 2: {x: 32.5,  y: 985.5}, 3: {x: 32.5,  y: 756.5},
+  4: {x: 32.5,  y: 527.5},  5: {x: 32.5,  y: 298.5}, 6: {x: 32.5,  y: 69.5},
+  7: {x: 748.5, y: 69.5},   8: {x: 748.5, y: 298.5}, 9: {x: 748.5, y: 527.5},
 };
-const MAP_SUP = {x: 390.5, y: 1280.5};
-const MAP_ROOM = {x: 113.5, y: 3.5, w: 717, h: 1358};
+const MAP_SUP = {x: 390.5, y: 1450};
+const MAP_ROOM = {x: 113.5, y: 3.5, w: 717, h: 1400};
+const MAP_VIEW = {w: 944, h: 1680};
 const MAP_COLORS = {
   active: '#1f9d4d', activeText: '#ffffff',
-  off:    '#c0392b', offText:    '#ffffff',
   unused: '#dfe2e6', unusedText: '#8a9099',
   sup:    '#3a4452', supText:    '#ffffff',
 };
 
-// states: object {posNum: 'active'|'off'|'unused'}
-function buildMapSVG(states) {
-  const W = 944, H = 1516;
+// activeSet: a Set of active position numbers
+function buildMapSVG(activeSet) {
   let boxes = '';
-  for (let p = 1; p <= 9; p++) {
+  for (let p = 1; p <= TOTAL_POSITIONS; p++) {
     const g = MAP_POS[p];
-    const st = states[p] || 'unused';
+    const isOn = activeSet.has(p);
+    const st = isOn ? 'active' : 'unused';
     const fill = MAP_COLORS[st], txt = MAP_COLORS[st + 'Text'];
     const cx = g.x + MAP_BOX/2, cy = g.y + MAP_BOX/2;
     boxes += `
-      <rect x="${g.x}" y="${g.y}" width="${MAP_BOX}" height="${MAP_BOX}" rx="18"
-            fill="${fill}" stroke="#ffffff" stroke-width="6"/>
-      <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
-            font-family="system-ui,sans-serif" font-weight="700" font-size="96" fill="${txt}">${p}</text>`;
+      <g class="map-pos ${isOn ? 'is-active' : 'is-inactive'}" data-pos="${p}">
+        <rect x="${g.x}" y="${g.y}" width="${MAP_BOX}" height="${MAP_BOX}" rx="18"
+              fill="${fill}" stroke="#ffffff" stroke-width="6"/>
+        <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
+              font-family="system-ui,sans-serif" font-weight="700" font-size="96" fill="${txt}">${p}</text>
+      </g>`;
   }
   const sx = MAP_SUP.x + MAP_BOX/2, sy = MAP_SUP.y + MAP_BOX/2;
   const sup = `
@@ -608,7 +611,7 @@ function buildMapSVG(states) {
     <text x="${sx}" y="${sy}" text-anchor="middle" dominant-baseline="central"
           font-family="system-ui,sans-serif" font-weight="700" font-size="96" fill="${MAP_COLORS.supText}">S</text>`;
   return `
-    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 ${MAP_VIEW.w} ${MAP_VIEW.h}" xmlns="http://www.w3.org/2000/svg">
       <rect x="${MAP_ROOM.x}" y="${MAP_ROOM.y}" width="${MAP_ROOM.w}" height="${MAP_ROOM.h}" rx="24"
             fill="#f4f6f8" stroke="#c9ced4" stroke-width="5"/>
       <text x="${MAP_ROOM.x + MAP_ROOM.w/2}" y="${MAP_ROOM.y + 70}" text-anchor="middle"
@@ -619,76 +622,91 @@ function buildMapSVG(states) {
     </svg>`;
 }
 
-// Build the state map for an exercise given its controllers (or just atcos for preview)
-function mapStatesFor(atcos, controllers) {
-  const states = {};
-  for (let p = 1; p <= 9; p++) {
-    if (p > atcos) { states[p] = 'unused'; continue; }
-    const c = controllers ? controllers[p-1] : null;
-    states[p] = (c && c.active === false) ? 'off' : 'active';
-  }
-  return states;
+function activeSetFromControllers() {
+  return new Set((run && run.controllers ? run.controllers : []).map(c => c.pos));
 }
 
 function renderRunMap() {
   if (!run) return;
   const ex = EX_BY_NUM[run.exercise];
-  document.getElementById('map-holder').innerHTML =
-    buildMapSVG(mapStatesFor(ex.atcos, run.controllers));
+  document.getElementById('map-holder').innerHTML = buildMapSVG(activeSetFromControllers());
+  renderShortfall('map-shortfall', run.controllers.length, ex.atcos);
+}
+
+// Red banner shown when fewer positions are active than the exercise plans for.
+function renderShortfall(elId, activeCount, planned) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (activeCount < planned) {
+    el.textContent = `⚠ Fewer ATCOs than planned: ${activeCount} active of ${planned} planned for this exercise.`;
+    el.hidden = false;
+  } else {
+    el.hidden = true;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
 //  ROSTER / PRE-START MODAL
 // ═══════════════════════════════════════════════════════════
-let rosterActive = [];   // boolean per controller index
+let rosterActive = [];   // boolean per position number index (0..8 => pos 1..9)
 let rosterExNum = null;
 
 function openRoster(exNum) {
   rosterExNum = exNum;
   const ex = EX_BY_NUM[exNum];
-  rosterActive = Array.from({length: ex.atcos}, () => true);
+  // Pre-select the first X positions (X = planned ATCOs); any position is selectable,
+  // but the total active can never exceed the planned count.
+  rosterActive = Array.from({length: TOTAL_POSITIONS}, (_, i) => i < ex.atcos);
   document.getElementById('roster-title').textContent =
     `Exercise ${pad(exNum)} (${ex.code}) — Roster Check`;
   document.getElementById('roster-note').innerHTML =
-    `Are all <strong>${ex.atcos}</strong> controllers present and in position? ` +
-    `Tap any position that is <strong>not staffed</strong> to deactivate it — it will be greyed out ` +
-    `and won't be measured. Active positions are green.`;
-  renderRosterChips();
+    `This exercise plans for <strong>${ex.atcos}</strong> controllers. ` +
+    `Tap a position on the map to activate or deactivate it. Green = active (will be measured), ` +
+    `grey = not active. You can't exceed ${ex.atcos} active position${ex.atcos!==1?'s':''}.`;
   renderRosterMap();
   document.getElementById('roster-modal').classList.add('open');
 }
 
-function renderRosterChips() {
-  const wrap = document.getElementById('roster-chips');
-  const ex = EX_BY_NUM[rosterExNum];
-  wrap.innerHTML = '';
-  for (let i = 0; i < ex.atcos; i++) {
-    const on = rosterActive[i];
-    const chip = document.createElement('div');
-    chip.className = 'chip' + (on ? '' : ' off');
-    chip.innerHTML = `<span>Pos ${i+1} · Ctrl ${i+1}</span><span class="chip-state">${on ? 'ACTIVE' : 'ABSENT'}</span>`;
-    chip.addEventListener('click', () => {
-      rosterActive[i] = !rosterActive[i];
-      renderRosterChips();
-      renderRosterMap();
-    });
-    wrap.appendChild(chip);
-  }
+function rosterActiveSet() {
+  const s = new Set();
+  rosterActive.forEach((on, i) => { if (on) s.add(i + 1); });
+  return s;
+}
+function rosterActiveCount() { return rosterActive.filter(Boolean).length; }
+
+function toggleRosterPosition(p) {
+  const i = p - 1;
+  const planned = EX_BY_NUM[rosterExNum].atcos;
+  if (!rosterActive[i] && rosterActiveCount() >= planned) return; // cap reached — block adding
+  rosterActive[i] = !rosterActive[i];
+  renderRosterMap();
 }
 
 function renderRosterMap() {
   const ex = EX_BY_NUM[rosterExNum];
-  const pseudo = rosterActive.map(a => ({ active: a }));
-  document.getElementById('roster-map-holder').innerHTML =
-    buildMapSVG(mapStatesFor(ex.atcos, pseudo));
+  const count = rosterActiveCount();
+  const holder = document.getElementById('roster-map-holder');
+  holder.innerHTML = buildMapSVG(rosterActiveSet());
+  holder.classList.toggle('at-cap', count >= ex.atcos);
+  document.getElementById('roster-counter').innerHTML =
+    `Active positions: <strong>${count}</strong> <span class="cap">/ ${ex.atcos} planned</span>`;
+  renderShortfall('roster-shortfall', count, ex.atcos);
 }
+
+// One delegated click handler on the roster map container (survives innerHTML rerenders)
+document.getElementById('roster-map-holder').addEventListener('click', (e) => {
+  const g = e.target.closest('[data-pos]');
+  if (!g) return;
+  toggleRosterPosition(parseInt(g.getAttribute('data-pos')));
+});
 
 document.getElementById('btn-roster-cancel').addEventListener('click', () => {
   document.getElementById('roster-modal').classList.remove('open');
 });
 document.getElementById('btn-roster-start').addEventListener('click', () => {
+  if (rosterActiveCount() === 0) { alert('Activate at least one position to start.'); return; }
   document.getElementById('roster-modal').classList.remove('open');
-  startExercise(rosterExNum, rosterActive.slice());
+  startExercise(rosterExNum, rosterActiveSet());
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -699,24 +717,24 @@ document.getElementById('btn-start').addEventListener('click', () => {
   openRoster(selectedExercise);
 });
 
-function startExercise(exNum, activeFlags) {
+function startExercise(exNum, activeSet) {
   const ex = EX_BY_NUM[exNum];
   const now = Date.now();
+  const positions = [];
+  for (let p = 1; p <= TOTAL_POSITIONS; p++) { if (activeSet.has(p)) positions.push(p); }
   run = {
     exercise: exNum,
     startedAt: now,
-    controllers: Array.from({length: ex.atcos}, (_, i) => {
-      const active = activeFlags ? activeFlags[i] !== false : true;
-      return {
-        index: i,
-        label: `Controller ${i+1}`,
-        active: active,
-        targetAt: active ? now + intervalMs() : null,
-        lastScore: null,
-        assessCount: 0,
-        status: active ? 'running' : 'inactive',
-      };
-    }),
+    planned: ex.atcos,
+    controllers: positions.map((pos, idx) => ({
+      index: idx,                 // array index for DOM ids / queue
+      pos: pos,                   // physical room position number
+      label: `Controller ${pos}`,
+      targetAt: now + intervalMs(),
+      lastScore: null,
+      assessCount: 0,
+      status: 'running',
+    })),
     queue: [],
   };
   persistRun();
@@ -756,7 +774,7 @@ function buildControllersGrid() {
     card.className = 'ctrl-card';
     card.id = `ctrl-card-${i}`;
     card.innerHTML = `
-      <h3>Position ${i+1}</h3>
+      <h3>Position ${ctrl.pos}</h3>
       <div class="ctrl-name">${ctrl.label}</div>
       <div class="countdown" id="cd-${i}">--:--</div>
       <div class="ctrl-status" id="cs-${i}"></div>
@@ -775,15 +793,6 @@ function updateCardDisplay(i) {
   const lsEl = document.getElementById(`ls-${i}`);
 
   card.className = 'ctrl-card';
-
-  if (ctrl.active === false) {
-    card.classList.add('inactive');
-    cdEl.textContent = 'OFF';
-    cdEl.className = 'countdown off';
-    csEl.textContent = 'Position not staffed';
-    lsEl.innerHTML = '';
-    return;
-  }
 
   if (ctrl.status === 'queued') card.classList.add('queued');
   if (ctrl.status === 'assessing') card.classList.add('assessing');
@@ -862,7 +871,7 @@ function submitRating(val) {
     deviceId: config.deviceId,
     exercise: run.exercise,
     exerciseCode: ex.code,
-    controller: ctrl.index + 1,
+    controller: ctrl.pos,
     rating: isSkip ? 'skip' : val,
     assessmentNum: ctrl.assessCount + 1,
     timestampUtc: now.toISOString(),
@@ -943,7 +952,6 @@ document.getElementById('btn-resume').addEventListener('click', () => {
   document.getElementById('resume-banner').classList.add('hidden');
   // controllers that were mid-assessment when interrupted go back to the queue
   run.controllers.forEach((c, i) => {
-    if (c.active === undefined) c.active = (c.status !== 'inactive'); // backfill older saves
     if (c.status === 'assessing') { c.status = 'queued'; if (!run.queue.includes(i)) run.queue.unshift(i); }
   });
   persistRun();
