@@ -85,8 +85,22 @@
   .ex-card .ex-num { font-size: 1.05rem; font-weight: 700; font-family: var(--font); }
   .ex-card .ex-ctrl { font-size: .72rem; opacity: .7; }
   .ex-card .ex-code { font-size: .68rem; margin-top: 4px; opacity: .7; word-break: break-word; line-height: 1.3; }
-  .ex-card.done { border-style: dashed; opacity: .6; }
+  .ex-card.done {
+    border-color: #1f9d4d; background: #1f9d4d; color: #ffffff; opacity: 1;
+  }
+  .ex-card.done .ex-ctrl, .ex-card.done .ex-code, .ex-card.done .ex-flag { color: #eafaf0; opacity: .92; }
+  .ex-card.done:hover { border-color: #17803e; background: #17803e; }
   .ex-card.done .ex-num::after { content: ' ✓'; }
+  .ex-card.done.selected { border-color: #ffffff; background: #17803e; }
+  .ex-card.suspended {
+    background: #f0f0f0; border-color: #dcdcdc; color: #a3a3a3; cursor: not-allowed;
+  }
+  .ex-card.suspended:hover { border-color: #dcdcdc; background: #f0f0f0; }
+  .ex-card.suspended .ex-code { opacity: .8; }
+  .ex-card .ex-flag {
+    font-size: .62rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    margin-top: 3px; opacity: .75;
+  }
 
   #start-panel {
     margin-top: 22px; padding: 18px 20px; border: 2px solid var(--text); border-radius: var(--radius);
@@ -115,6 +129,11 @@
   .ctrl-card.assessing { border-color: var(--text); border-width: 3px; background: #fff8e1; }
   .ctrl-card h3 { font-size: .8rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 10px; color: var(--muted); }
   .ctrl-card .ctrl-name { font-size: .98rem; font-weight: 700; margin-bottom: 12px; }
+  .ctrl-card .ctrl-sector {
+    display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; color: #3a4452; background: #eef0f2; border-radius: 3px;
+    padding: 2px 8px; margin: -8px 0 12px;
+  }
   .ctrl-card .countdown { font-family: var(--font); font-size: 1.9rem; font-weight: 700; letter-spacing: .03em; }
   .ctrl-card .countdown.urgent { color: var(--danger); }
   .ctrl-card .ctrl-status { font-size: .76rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
@@ -181,7 +200,8 @@
   .modal-box.wide { max-width: 560px; text-align: left; }
   #modal-box .modal-label { font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
   #modal-box .modal-question { font-size: 1.2rem; font-weight: 700; line-height: 1.35; margin-bottom: 8px; }
-  #modal-box .modal-scale { font-size: .78rem; color: var(--muted); margin-bottom: 26px; }
+  #modal-box .modal-scale { font-size: .78rem; color: var(--muted); margin-bottom: 26px; display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: center; }
+  #modal-box .modal-scale span:not(:last-child)::after { content: '·'; margin-left: 12px; color: var(--border-dark); }
   #modal-box .modal-scale em { font-style: normal; font-weight: 600; color: var(--text); }
   #rating-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
   .rating-btn {
@@ -197,6 +217,8 @@
   .modal-box p.note { font-size: .86rem; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: .8rem; font-weight: 600; margin-bottom: 5px; }
+  .field label.chk-label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .field label.chk-label input[type="checkbox"] { width: auto; accent-color: var(--text); }
   .field input, .field select {
     width: 100%; padding: 9px 11px; border: 2px solid var(--border); border-radius: var(--radius);
     font-size: .9rem; font-family: var(--font-ui);
@@ -300,7 +322,13 @@
   <div class="modal-box" id="modal-box">
     <div class="modal-label">ISA Assessment</div>
     <div class="modal-question" id="modal-question">—</div>
-    <div class="modal-scale"><em>1</em> = Very manageable &nbsp;·&nbsp; <em>5</em> = Unmanageable</div>
+    <div class="modal-scale">
+      <span><em>1</em> Very light load</span>
+      <span><em>2</em> Light load</span>
+      <span><em>3</em> Medium load</span>
+      <span><em>4</em> Heavy load</span>
+      <span><em>5</em> Overload</span>
+    </div>
     <div id="rating-btns">
       <button class="rating-btn" data-val="1">1</button>
       <button class="rating-btn" data-val="2">2</button>
@@ -359,12 +387,17 @@
     <div class="field">
       <label for="set-interval">Assessment interval</label>
       <select id="set-interval">
+        <option value="600">Every 10 minutes</option>
         <option value="300">Live — every 5 minutes</option>
         <option value="60">Every 1 minute</option>
         <option value="30">Test — every 30 seconds</option>
         <option value="10">Test — every 10 seconds</option>
       </select>
       <small>Use a test interval to rehearse, then switch to 5 minutes for real sessions.</small>
+    </div>
+    <div class="field">
+      <label class="chk-label"><input type="checkbox" id="set-include-training" /> Measure Training exercises</label>
+      <small>Off by default. When off, Training exercises are shown greyed out and cannot be selected or started.</small>
     </div>
     <div class="modal-actions">
       <button class="btn outline" id="btn-test-sync">Test sync connection</button>
@@ -376,65 +409,58 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  EXERCISE DATA  (from ATCOSperEX.csv)
+//  EXERCISE DATA  (from _ALG__Exercises_and_Sectors_Distribution_v2.xlsx)
+//  positions: {posNum: sectorName} — only lists positions actually used;
+//  some exercises skip position 5 by design (physical seating in the room).
 // ═══════════════════════════════════════════════════════════
 const EXERCISES = [
-  {n:1,  code:"BASE-FAM-1",              name:"Familiarisation: System 1",                                   atcos:5},
-  {n:2,  code:"BASE-FAM-2",              name:"Familiarisation: System 2",                                   atcos:5},
-  {n:3,  code:"BASE-SIM-1-110",          name:"Baseline Scenario 1",                                         atcos:5},
-  {n:4,  code:"BASE-SIM-1-140",          name:"Baseline Scenario - Increased Traffic 1",                     atcos:5},
-  {n:5,  code:"BASE-SIM-2-110",          name:"Baseline Scenario 2",                                         atcos:5},
-  {n:6,  code:"BASE-SIM-2-140",          name:"Baseline Scenario - Increased Traffic 2",                     atcos:5},
-  {n:7,  code:"BASE-FAM-CPDLC-1",        name:"Familiarisation: CPDLC 1 and Datalink",                       atcos:5},
-  {n:8,  code:"BASE-FAM-CPDLC-2",        name:"Familiarisation: CPDLC 2 and Datalink",                       atcos:5},
-  {n:9,  code:"MD-N-FAM-60",             name:"Familiarisation: Northern FIR (x2)",                          atcos:8},
-  {n:10, code:"MD-N-SIM-85",             name:"Northern FIR simulation (x2) - 2033",                         atcos:8},
-  {n:11, code:"MD-N-SIM-110",            name:"Northern FIR simulation (x2) - 2040",                         atcos:8},
-  {n:12, code:"MD-N-DESIGN-110",         name:"Sector boundary enhancements 1",                              atcos:8},
-  {n:13, code:"MD-DUB-FAM-60",           name:"Familiarisation: Dubai + AUH Sequencing - Central FIR (x2)",  atcos:8},
-  {n:14, code:"MD-DUB-SIM-85",           name:"Dubai + AUH Sequencing - Central FIR (x2) - 2033",            atcos:8},
-  {n:15, code:"MD-DUB-SIM-110",          name:"Dubai + AUH Sequencing - Central FIR (x2) - 2040",            atcos:8},
-  {n:16, code:"MD-MCT-FAM-60",           name:"Familiarisation: Muscat Sectors (x2)",                        atcos:8},
-  {n:17, code:"MD-MCT-SIM-85",           name:"Muscat Sectors simulation (x2) - 2033",                       atcos:8},
-  {n:18, code:"MD-MCT-SIM-110",          name:"Muscat Sectors simulation (x2) - 2040",                       atcos:8},
-  {n:19, code:"MD-E-FAM-60",             name:"Familiarisation: East Sectors (x2)",                          atcos:8},
-  {n:20, code:"MD-E-SIM-85",             name:"East Sectors simulation (x2) - 2033",                         atcos:8},
-  {n:21, code:"MD-E-SIM-110",            name:"East Sectors simulation (x2) - 2040",                         atcos:8},
-  {n:22, code:"MD-FAM-ALLN-NOCPDLC-60",  name:"Familiarisation: All North FIR - No CPDLC",                   atcos:9},
-  {n:23, code:"MD-SIM-ALLN-NOCPDLC-85",  name:"All North FIR simulation - No CPDLC 1",                        atcos:9},
-  {n:24, code:"MD-SIM-ALLN-NOCPDLC-110", name:"All North FIR simulation - No CPDLC 2",                        atcos:9},
-  {n:25, code:"MD-FAM-ALLN-60",          name:"Familiarisation: All North FIR - CPDLC",                      atcos:9},
-  {n:26, code:"MD-SIM-ALLN-85",          name:"All North FIR simulation - CPDLC 1",                          atcos:9},
-  {n:27, code:"MD-SIM-ALLN-110",         name:"All North FIR simulation - CPDLC 2",                          atcos:9},
-  {n:28, code:"MD-FAM-ALLN-VM-60",       name:"Familiarisation: All North FIR - CPDLC - Vertical Merge",     atcos:7},
-  {n:29, code:"MD-SIM-ALLN-VM-85",       name:"All North FIR simulation - CPDLC 1 - Vertical Merge",         atcos:7},
-  {n:30, code:"MD-SIM-ALLN-VM-110-1",    name:"All North FIR simulation - CPDLC 2 - Vertical Merge",         atcos:7},
-  {n:31, code:"MD-SIM-ALLN-VM-110-2",    name:"All North FIR simulation - CPDLC 3 - Vertical Merge (OPTIONAL)", atcos:7},
-  {n:32, code:"MD-FAM-FRA/FUA-60",       name:"Familiarisation: FRA/FUA 1 - No TRA/TSA active (x2)",         atcos:8},
-  {n:33, code:"MD-SIM-FRA/FUA-110-A",    name:"FRA/FUA 1 - No TRA/TSA active (x2)",                          atcos:8},
-  {n:34, code:"MD-SIM-FRA/FUA-110-B",    name:"FRA/FUA 2 - All TRA/TSA active (x2)",                         atcos:8},
-  {n:35, code:"MD-FAM-DIN-FUA/FRA-60",   name:"Familiarisation: FRA/FUA 3 - Dynamic TRA/TSA activation (x2)", atcos:8},
-  {n:36, code:"MD-SIM-DIN-FUA/FRA-110",  name:"FRA/FUA 3 - Dynamic TRA/TSA activation (x2)",                 atcos:8},
-  {n:37, code:"MD-SIM-CONT-110-1",       name:"Contingency: Weather Re-routing 1",                          atcos:7},
-  {n:38, code:"MD-SIM-CONT-110-2",       name:"Contingency: Weather Re-routing 2",                          atcos:7},
-  {n:39, code:"MD-SIM-CONT-110-3",       name:"Sector Degraded: Jamming & Spoofing 1",                       atcos:7},
-  {n:40, code:"MD-SIM-CONT-110-4",       name:"Sector Degraded: Jamming & Spoofing 2",                       atcos:7},
-  {n:41, code:"FI-FAM-N-85",             name:"Familiarisation: First Implementation NORTH",                atcos:6},
-  {n:42, code:"FI-SIM-N-110",            name:"First Implementation NORTH",                                 atcos:6},
-  {n:43, code:"FI-FAM-C-85",             name:"Familiarisation: First Implementation CENTRAL",              atcos:4},
-  {n:44, code:"FI-SIM-C-110",            name:"First Implementation CENTRAL",                               atcos:4},
-  {n:45, code:"FI-FAM-S-85",             name:"Familiarisation: First Implementation SOUTH",                atcos:4},
-  {n:46, code:"FI-SIM-S-110",            name:"First Implementation SOUTH",                                 atcos:4},
-  {n:47, code:"FI-FAM-ALL-85",           name:"Familiarisation: First Implementation - All FIR",            atcos:4},
-  {n:48, code:"FI-SIM-ALL-1-85",         name:"First Implementation - All FIR 1",                           atcos:7},
-  {n:49, code:"FI-SIM-ALL-2-110",        name:"First Implementation - All FIR 2",                           atcos:7},
-  {n:50, code:"FI-SIM-ALL-3-110",        name:"First Implementation - All FIR 3",                           atcos:7},
-  {n:51, code:"FI-SIM-ALL-4-130",        name:"First Implementation - All FIR - Stress-test 1",             atcos:7},
-  {n:52, code:"FI-SIM-ALL-5-130",        name:"First Implementation - All FIR - Stress-test 2",             atcos:7},
-  {n:53, code:"FI-FAM-CDR-85",           name:"Familiarisation: Northern CDRs",                             atcos:8},
-  {n:54, code:"FI-SIM-CDR-110",          name:"Northern CDRs",                                              atcos:8},
-  {n:55, code:"FI-FAM-T-CDR-85",         name:"Familiarisation: Tactical CDRs",                             atcos:4},
-  {n:56, code:"FI-SIM-T-CDR-110",        name:"Tactical CDRs",                                              atcos:4},
+  {n:1, code:'BASE-FAM-1-85', scenario:'As-Is', traffic:'C1 (85% 2026)', parallel:false, training:true, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'WEST', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
+  {n:2, code:'BASE-FAM-2-85', scenario:'As-Is', traffic:'C1 (85% 2026)', parallel:false, training:true, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'WEST', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
+  {n:3, code:'BASE-FAM-DL-1', scenario:'As-Is', traffic:'C2 (110% 2026)', parallel:false, training:true, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'WEST', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
+  {n:4, code:'BASE-FAM-DL-2', scenario:'As-Is', traffic:'C2 (110% 2026)', parallel:false, training:true, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'WEST', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
+  {n:5, code:'BASE-SIM-1-110', scenario:'As-Is', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:5, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO'}},
+  {n:6, code:'BASE-SIM-2-110', scenario:'As-Is', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:5, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO'}},
+  {n:7, code:'BASE-SIM-1-130', scenario:'As-Is', traffic:'C3 (130% 2026)', parallel:false, training:false, atcos:5, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO'}},
+  {n:8, code:'MD-N-FAM-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:true, training:true, atcos:8, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'SEEB (U&L)', 6:'WEST_LO', 7:'WEST_UP', 8:'NORTH', 9:'SEEB (U&L)'}},
+  {n:9, code:'MD-SUH-FAM-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:true, training:true, atcos:8, positions:{1:'SEEB_LO', 2:'SEEB_UP', 3:'SUH', 4:'ALPHA', 6:'SEEB_LO', 7:'SEEB_UP', 8:'SUH', 9:'ALPHA'}},
+  {n:10, code:'MD-CEN-FAM-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:true, training:true, atcos:8, positions:{1:'CENTRAL_LO', 2:'CENTRAL_UP', 3:'BRAVO', 4:'SEEB (U&L)', 6:'CENTRAL_LO', 7:'CENTRAL_UP', 8:'BRAVO', 9:'SEEB (U&L)'}},
+  {n:11, code:'MD-FAM-ALLN-NODL-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:false, training:true, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
+  {n:12, code:'MD-SIM-ALLN-NODL-80-1', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
+  {n:13, code:'MD-SIM-ALLN-NODL-80-2', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
+  {n:14, code:'MD-SIM-ALLN-NODL-80-3', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'BRAVO', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
+  {n:15, code:'MD-SIM-ALLN-NODL-80-4', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'BRAVO', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
+  {n:16, code:'MD-FAM-FRA/FUA-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:true, training:true, atcos:8, positions:{1:'SOUTH', 2:'MIDDLE', 3:'CENTRAL (U&L)', 4:'BRAVO', 6:'SOUTH', 7:'MIDDLE', 8:'CENTRAL (U&L)', 9:'BRAVO'}},
+  {n:17, code:'MD-SIM-ALLN-NODL-110-1', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
+  {n:18, code:'MD-SIM-ALLN-NODL-110-2', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
+  {n:19, code:'MD-SIM-ALLN-DL-80', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
+  {n:20, code:'MD-SIM-ALLN-DL-110-1', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
+  {n:21, code:'MD-SIM-ALLN-DL-110-2', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
+  {n:22, code:'MD-FAM-ALLN-VM-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:false, training:true, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:23, code:'MD-SIM-ALLN-VM-80-1', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:24, code:'MD-SIM-ALLN-VM-80-2', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:25, code:'MD-SIM-ALLN-VM-110-1', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:26, code:'MD-SIM-ALLN-VM-110-2', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:27, code:'MD-SIM-ALLN-VM-130', scenario:'Maximum Deployment', traffic:'L4 (130% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:28, code:'MD-FAM-DIN-FUA/FRA-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:true, training:true, atcos:8, positions:{1:'SOUTH', 2:'MIDDLE', 3:'CENTRAL (U&L)', 4:'BRAVO', 6:'SOUTH', 7:'MIDDLE', 8:'CENTRAL (U&L)', 9:'BRAVO'}},
+  {n:29, code:'MD-SIM-DIN-FUA/FRA-110', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:true, training:false, atcos:8, positions:{1:'SOUTH', 2:'MIDDLE', 3:'CENTRAL (U&L)', 4:'BRAVO', 6:'SOUTH', 7:'MIDDLE', 8:'CENTRAL (U&L)', 9:'BRAVO'}},
+  {n:30, code:'MD-SIM-CONT-110-1', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB', 7:'SUH'}},
+  {n:31, code:'MD-SIM-CONT-110-2', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB', 7:'SUH'}},
+  {n:32, code:'MD-SIM-CONT-110-3', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB', 7:'SUH'}},
+  {n:33, code:'MD-SIM-CONT-110-4', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB', 7:'SUH'}},
+  {n:34, code:'FI-FAM-N-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:true, training:true, atcos:6, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 6:'WEST', 7:'NORTH', 8:'ALPHA'}},
+  {n:35, code:'FI-SIM-N-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:true, training:false, atcos:6, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 6:'WEST', 7:'NORTH', 8:'ALPHA'}},
+  {n:36, code:'FI-FAM-C-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:true, training:true, atcos:8, positions:{1:'CENTRAL', 2:'BRAVO', 3:'MIDDLE', 4:'SOUTH', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:37, code:'FI-SIM-C-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:true, training:false, atcos:8, positions:{1:'CENTRAL', 2:'BRAVO', 3:'MIDDLE', 4:'SOUTH', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:38, code:'FI-FAM-ALL-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:true, training:true, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:39, code:'FI-SIM-ALL-1-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:40, code:'FI-SIM-ALL-2-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:41, code:'FI-SIM-ALL-3-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:42, code:'FI-SIM-ALL-4-130', scenario:'First Implementation', traffic:'C3 (130% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:43, code:'FI-SIM-ALL-5-130', scenario:'First Implementation', traffic:'C3 (130% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:44, code:'FI-FAM-CDR-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:true, training:true, atcos:8, positions:{1:'BRAVO', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 6:'BRAVO', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
+  {n:45, code:'FI-SIM-CDR-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:true, training:false, atcos:8, positions:{1:'BRAVO', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 6:'BRAVO', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
+  {n:46, code:'FI-FAM-T-CDR-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:true, training:true, atcos:8, positions:{1:'SOUTH', 2:'MIDDLE', 3:'CENTRAL', 4:'BRAVO', 6:'SOUTH', 7:'MIDDLE', 8:'CENTRAL', 9:'BRAVO'}},
+  {n:47, code:'FI-SIM-T-CDR-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:true, training:false, atcos:8, positions:{1:'SOUTH', 2:'MIDDLE', 3:'CENTRAL', 4:'BRAVO', 6:'SOUTH', 7:'MIDDLE', 8:'CENTRAL', 9:'BRAVO'}},
 ];
 const EX_BY_NUM = {};
 EXERCISES.forEach(e => EX_BY_NUM[e.n] = e);
@@ -445,7 +471,6 @@ EXERCISES.forEach(e => EX_BY_NUM[e.n] = e);
 const K_CONFIG    = 'isa_config_v2';
 const K_LOG       = 'isa_log_v2';
 const K_RUN       = 'isa_run_v3';
-const K_COMPLETED = 'isa_completed_v2';
 
 function lsGet(key, fallback) {
   try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); }
@@ -462,7 +487,7 @@ function lsSet(key, val) {
 //  the link will then sync automatically — no per-tablet setup.
 //  (A tablet can still override it in Settings if ever needed.)
 // ═══════════════════════════════════════════════════════════
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzs-T7XY9o2Ly_r_dbPP2n4xH4Q1QU6OTJ-CKTxKq17z4AWKibggRHDxwU0sirYxfvh/exec';   // e.g. 'https://script.google.com/macros/s/AKfy...../exec'
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzkxNgHmMZe32BwgQmxf1J-H8FEI8zUD-OeoiD0wPLF7P5z0C_JzSABoToL7UimTBvG/exec';
 const DEFAULT_INTERVAL_SEC = 300; // 300 = live 5-minute interval
 
 // ═══════════════════════════════════════════════════════════
@@ -470,11 +495,12 @@ const DEFAULT_INTERVAL_SEC = 300; // 300 = live 5-minute interval
 // ═══════════════════════════════════════════════════════════
 let config = lsGet(K_CONFIG, null);
 if (!config) {
-  config = { station: '', scriptUrlOverride: '', intervalSec: DEFAULT_INTERVAL_SEC, deviceId: genId() };
+  config = { station: '', scriptUrlOverride: '', intervalSec: DEFAULT_INTERVAL_SEC, deviceId: genId(), includeTraining: false };
   lsSet(K_CONFIG, config);
 }
 if (!config.deviceId) { config.deviceId = genId(); lsSet(K_CONFIG, config); }
 if (config.intervalSec == null) { config.intervalSec = DEFAULT_INTERVAL_SEC; lsSet(K_CONFIG, config); }
+if (config.includeTraining == null) { config.includeTraining = false; lsSet(K_CONFIG, config); }
 
 // Effective sync URL: a tablet's manual override wins; otherwise the hardcoded default.
 function scriptUrl() {
@@ -493,7 +519,9 @@ function intervalMs() { return (config.intervalSec || DEFAULT_INTERVAL_SEC) * 10
 //  STATE
 // ═══════════════════════════════════════════════════════════
 let selectedExercise = null;
-let completedExercises = new Set(lsGet(K_COMPLETED, []));
+// "Completed" is derived purely from the Google Sheet, never persisted locally —
+// this way, clearing the Sheet is reflected here on the next refresh/check.
+let completedExercises = new Set();
 let logEntries = lsGet(K_LOG, []);
 
 let run = null;          // {exercise, startedAt, controllers:[...], queue:[...]}
@@ -541,42 +569,61 @@ function buildExerciseGrid() {
   const grid = document.getElementById('exercise-grid');
   grid.innerHTML = '';
   EXERCISES.forEach(ex => {
+    const suspended = ex.training && !config.includeTraining;
     const card = document.createElement('div');
-    card.className = 'ex-card' + (completedExercises.has(ex.n) ? ' done' : '');
+    card.className = 'ex-card'
+      + (completedExercises.has(ex.n) ? ' done' : '')
+      + (suspended ? ' suspended' : '');
     card.dataset.ex = ex.n;
     card.innerHTML = `
       <div class="ex-top">
         <span class="ex-num">EX ${pad(ex.n)}</span>
         <span class="ex-ctrl">${ex.atcos} ATCO${ex.atcos!==1?'s':''}</span>
       </div>
-      <div class="ex-code">${ex.code}</div>`;
-    card.addEventListener('click', () => selectExercise(ex.n));
+      <div class="ex-code">${ex.code}</div>
+      ${ex.training ? '<div class="ex-flag">Training</div>' : ''}`;
+    if (suspended) {
+      card.title = 'Training exercises are not measured. Enable them in Settings if needed.';
+    } else {
+      card.addEventListener('click', () => selectExercise(ex.n));
+    }
     grid.appendChild(card);
   });
 }
 
 function selectExercise(num) {
+  const ex = EX_BY_NUM[num];
+  if (ex.training && !config.includeTraining) return; // suspended — not selectable
+
+  if (selectedExercise === num) {
+    // clicking the already-selected exercise deselects it
+    selectedExercise = null;
+    document.querySelectorAll('.ex-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('start-panel').style.display = 'none';
+    return;
+  }
+
   selectedExercise = num;
   document.querySelectorAll('.ex-card').forEach(c => c.classList.remove('selected'));
   document.querySelector(`.ex-card[data-ex="${num}"]`)?.classList.add('selected');
-  const ex = EX_BY_NUM[num];
   document.getElementById('start-label').textContent = `Exercise ${pad(num)} — ${ex.code}`;
-  document.getElementById('start-sub').textContent = `${ex.name} · ${ex.atcos} controllers · ISA every ${fmtClock(config.intervalSec)}`;
+  document.getElementById('start-sub').textContent = `${ex.scenario} · ${ex.traffic} · ${ex.atcos} controllers · ISA every ${fmtClock(config.intervalSec)}`;
   document.getElementById('start-panel').style.display = 'flex';
 }
 
 // ═══════════════════════════════════════════════════════════
 //  SIM ROOM MAP
-//  6 positions down the left, 3 down the right (aligned to top),
-//  S = supervisor (reference only). Box = 163×163.
-//  Positions numbered 1..6 up the left, 7..9 down the right.
+//  5 positions down the left, 4 down the right, S = supervisor (reference
+//  only, unchanged location). Box = 163×163. Positions 1..5 up the left,
+//  6..9 down the right.
 // ═══════════════════════════════════════════════════════════
 const TOTAL_POSITIONS = 9;
 const MAP_BOX = 163;
 const MAP_POS = {
   1: {x: 32.5,  y: 1214.5}, 2: {x: 32.5,  y: 985.5}, 3: {x: 32.5,  y: 756.5},
-  4: {x: 32.5,  y: 527.5},  5: {x: 32.5,  y: 298.5}, 6: {x: 32.5,  y: 69.5},
-  7: {x: 748.5, y: 69.5},   8: {x: 748.5, y: 298.5}, 9: {x: 748.5, y: 527.5},
+  4: {x: 32.5,  y: 527.5},  5: {x: 32.5,  y: 298.5},
+  6: {x: 748.5, y: 69.5},   7: {x: 748.5, y: 298.5}, 8: {x: 748.5, y: 527.5},
+  9: {x: 748.5, y: 756.5},
 };
 const MAP_SUP = {x: 390.5, y: 1450};
 const MAP_ROOM = {x: 113.5, y: 3.5, w: 717, h: 1400};
@@ -588,20 +635,28 @@ const MAP_COLORS = {
 };
 
 // activeSet: a Set of active position numbers
-function buildMapSVG(activeSet) {
+// sectorLabels: optional {posNum: sectorName} to show under the number (e.g. on the run screen)
+function buildMapSVG(activeSet, sectorLabels) {
   let boxes = '';
   for (let p = 1; p <= TOTAL_POSITIONS; p++) {
     const g = MAP_POS[p];
     const isOn = activeSet.has(p);
     const st = isOn ? 'active' : 'unused';
     const fill = MAP_COLORS[st], txt = MAP_COLORS[st + 'Text'];
-    const cx = g.x + MAP_BOX/2, cy = g.y + MAP_BOX/2;
+    const cx = g.x + MAP_BOX/2;
+    const label = sectorLabels && sectorLabels[p];
+    const numY = label ? g.y + MAP_BOX/2 - 16 : g.y + MAP_BOX/2;
+    const labelText = label
+      ? `<text x="${cx}" y="${g.y + MAP_BOX/2 + 44}" text-anchor="middle" dominant-baseline="central"
+           font-family="system-ui,sans-serif" font-weight="600" font-size="28" fill="${txt}"
+           opacity="0.92">${escXml(label)}</text>` : '';
     boxes += `
       <g class="map-pos ${isOn ? 'is-active' : 'is-inactive'}" data-pos="${p}">
         <rect x="${g.x}" y="${g.y}" width="${MAP_BOX}" height="${MAP_BOX}" rx="18"
               fill="${fill}" stroke="#ffffff" stroke-width="6"/>
-        <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
-              font-family="system-ui,sans-serif" font-weight="700" font-size="96" fill="${txt}">${p}</text>
+        <text x="${cx}" y="${numY}" text-anchor="middle" dominant-baseline="central"
+              font-family="system-ui,sans-serif" font-weight="700" font-size="${label ? 72 : 96}" fill="${txt}">${p}</text>
+        ${labelText}
       </g>`;
   }
   const sx = MAP_SUP.x + MAP_BOX/2, sy = MAP_SUP.y + MAP_BOX/2;
@@ -622,6 +677,10 @@ function buildMapSVG(activeSet) {
     </svg>`;
 }
 
+function escXml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function activeSetFromControllers() {
   return new Set((run && run.controllers ? run.controllers : []).map(c => c.pos));
 }
@@ -629,7 +688,7 @@ function activeSetFromControllers() {
 function renderRunMap() {
   if (!run) return;
   const ex = EX_BY_NUM[run.exercise];
-  document.getElementById('map-holder').innerHTML = buildMapSVG(activeSetFromControllers());
+  document.getElementById('map-holder').innerHTML = buildMapSVG(activeSetFromControllers(), ex.positions);
   renderShortfall('map-shortfall', run.controllers.length, ex.atcos);
 }
 
@@ -654,9 +713,11 @@ let rosterExNum = null;
 function openRoster(exNum) {
   rosterExNum = exNum;
   const ex = EX_BY_NUM[exNum];
-  // Pre-select the first X positions (X = planned ATCOs); any position is selectable,
-  // but the total active can never exceed the planned count.
-  rosterActive = Array.from({length: TOTAL_POSITIONS}, (_, i) => i < ex.atcos);
+  // Pre-select exactly the room positions defined for this exercise in the source data
+  // (some exercises use e.g. 1-4 & 6-9, skipping 5, to match real seating). Any position
+  // stays freely toggleable, but the active count can never exceed the planned total.
+  const plannedPositions = new Set(Object.keys(ex.positions).map(Number));
+  rosterActive = Array.from({length: TOTAL_POSITIONS}, (_, i) => plannedPositions.has(i + 1));
   document.getElementById('roster-title').textContent =
     `Exercise ${pad(exNum)} (${ex.code}) — Roster Check`;
   document.getElementById('roster-note').innerHTML =
@@ -686,7 +747,7 @@ function renderRosterMap() {
   const ex = EX_BY_NUM[rosterExNum];
   const count = rosterActiveCount();
   const holder = document.getElementById('roster-map-holder');
-  holder.innerHTML = buildMapSVG(rosterActiveSet());
+  holder.innerHTML = buildMapSVG(rosterActiveSet(), ex.positions);
   holder.classList.toggle('at-cap', count >= ex.atcos);
   document.getElementById('roster-counter').innerHTML =
     `Active positions: <strong>${count}</strong> <span class="cap">/ ${ex.atcos} planned</span>`;
@@ -729,6 +790,7 @@ function startExercise(exNum, activeSet) {
     controllers: positions.map((pos, idx) => ({
       index: idx,                 // array index for DOM ids / queue
       pos: pos,                   // physical room position number
+      sector: ex.positions[pos] || '',
       label: `Controller ${pos}`,
       targetAt: now + intervalMs(),
       lastScore: null,
@@ -747,7 +809,7 @@ function enterRunScreen(freshStart) {
   document.getElementById('modal-overlay').classList.remove('open');
   document.getElementById('run-title').textContent = `Exercise ${pad(run.exercise)} — ${ex.code}`;
   document.getElementById('run-meta').textContent =
-    `${ex.name} · ${ex.atcos} controllers · ISA every ${fmtClock(config.intervalSec)}` +
+    `${ex.scenario} · ${ex.traffic} · ${ex.atcos} controllers · ISA every ${fmtClock(config.intervalSec)}` +
     (freshStart ? ` · Started ${fmtTime(new Date())}` : ` · Resumed ${fmtTime(new Date())}`);
   buildControllersGrid();
   renderRunMap();
@@ -776,6 +838,7 @@ function buildControllersGrid() {
     card.innerHTML = `
       <h3>Position ${ctrl.pos}</h3>
       <div class="ctrl-name">${ctrl.label}</div>
+      ${ctrl.sector ? `<div class="ctrl-sector">${ctrl.sector}</div>` : ''}
       <div class="countdown" id="cd-${i}">--:--</div>
       <div class="ctrl-status" id="cs-${i}"></div>
       <div class="last-score" id="ls-${i}"></div>`;
@@ -926,13 +989,16 @@ document.getElementById('btn-stop-confirm').addEventListener('click', () => {
   if (tickInterval) clearInterval(tickInterval);
   document.getElementById('stop-modal').classList.remove('open');
   document.getElementById('modal-overlay').classList.remove('open');
-  if (run) { completedExercises.add(run.exercise); lsSet(K_COMPLETED, [...completedExercises]); }
+  // Optimistic mark for this screen only — not persisted. The cloud check below
+  // (once synced) is what actually decides "done" from here on.
+  if (run) completedExercises.add(run.exercise);
   clearRun();
   buildExerciseGrid();
   showScreen('screen-list');
   selectedExercise = null;
   document.getElementById('start-panel').style.display = 'none';
   flushUnsynced();
+  refreshCompletedFromCloud();
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -959,9 +1025,10 @@ document.getElementById('btn-resume').addEventListener('click', () => {
 });
 document.getElementById('btn-discard').addEventListener('click', () => {
   document.getElementById('resume-banner').classList.add('hidden');
-  if (run) { completedExercises.add(run.exercise); lsSet(K_COMPLETED, [...completedExercises]); }
+  if (run) completedExercises.add(run.exercise); // optimistic only, not persisted
   clearRun();
   buildExerciseGrid();
+  refreshCompletedFromCloud();
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -1084,6 +1151,7 @@ function openSettings() {
     ? 'Using built-in URL — leave blank to keep it'
     : 'https://script.google.com/macros/s/..../exec';
   document.getElementById('set-interval').value = String(config.intervalSec || DEFAULT_INTERVAL_SEC);
+  document.getElementById('set-include-training').checked = !!config.includeTraining;
   document.getElementById('settings-modal').classList.add('open');
 }
 document.getElementById('btn-settings').addEventListener('click', openSettings);
@@ -1094,10 +1162,13 @@ document.getElementById('btn-settings-save').addEventListener('click', () => {
   config.station = document.getElementById('set-station').value.trim();
   config.scriptUrlOverride = document.getElementById('set-url').value.trim();
   config.intervalSec = parseInt(document.getElementById('set-interval').value) || DEFAULT_INTERVAL_SEC;
+  config.includeTraining = document.getElementById('set-include-training').checked;
   lsSet(K_CONFIG, config);
   document.getElementById('settings-modal').classList.remove('open');
   setSyncPill();
-  if (selectedExercise) selectExercise(selectedExercise);
+  selectedExercise = null;
+  document.getElementById('start-panel').style.display = 'none';
+  buildExerciseGrid();
   flushUnsynced();
 });
 document.getElementById('btn-test-sync').addEventListener('click', async () => {
@@ -1124,6 +1195,31 @@ updateLogCounts();
 setSyncPill();
 checkForResume();
 flushUnsynced();
+refreshCompletedFromCloud();
+
+// On load/refresh, ask the Sheet which exercises already have at least one synced
+// entry, and mark those as done (green ✓) on the main list — so a refresh reflects
+// the shared database, not just this tablet's own history.
+async function refreshCompletedFromCloud() {
+  const url = scriptUrl();
+  if (!url) return;
+  try {
+    const sep = url.includes('?') ? '&' : '?';
+    const res = await fetch(url + sep + 'action=exercises', { method: 'GET' });
+    const data = await res.json();
+    if (data && data.ok && Array.isArray(data.exercises)) {
+      // Fully replace — the Sheet is the single source of truth for "done".
+      // If it was cleared, exercises un-mark on the very next check.
+      completedExercises = new Set(data.exercises);
+      buildExerciseGrid();
+    }
+  } catch (e) {
+    // offline or old script deployment without this endpoint — silently ignore.
+    // completedExercises keeps whatever it last had (in-memory only; nothing
+    // is trusted from localStorage anymore).
+  }
+}
+
 </script>
 </body>
 </html>
