@@ -532,6 +532,48 @@ let currentAssessCtrl = null;
 // ═══════════════════════════════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  BELL SOUND  (Web Audio — no audio file needed)
+// ═══════════════════════════════════════════════════════════
+let audioCtx = null;
+
+// Browsers block sound until the user interacts with the page.
+// Called once when an exercise is started, which "unlocks" audio for later bells.
+function unlockAudio() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch (e) { /* audio unavailable — fail silently, tool still works */ }
+}
+
+function playBell() {
+  try {
+    if (!audioCtx) unlockAudio();
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    // Two descending chime notes = classic "ding-dong" doorbell.
+    // note: [frequency Hz, start offset s, duration s]
+    const notes = [
+      [659.25, 0.00, 1.1],  // "ding" — E5
+      [523.25, 0.55, 1.5],  // "dong" — C5 (lower, starts a beat later)
+    ];
+    const t0 = audioCtx.currentTime;
+    notes.forEach(([freq, offset, dur]) => {
+      const start = t0 + offset;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.5, start + 0.012);          // strike
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);    // decay
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(start);
+      osc.stop(start + dur + 0.1);
+    });
+  } catch (e) { /* never let a sound error break the assessment flow */ }
+}
 function genId() {
   if (crypto && crypto.randomUUID) return crypto.randomUUID();
   return 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2,10);
@@ -766,6 +808,7 @@ document.getElementById('btn-roster-cancel').addEventListener('click', () => {
 });
 document.getElementById('btn-roster-start').addEventListener('click', () => {
   if (rosterActiveCount() === 0) { alert('Activate at least one position to start.'); return; }
+  unlockAudio();
   document.getElementById('roster-modal').classList.remove('open');
   startExercise(rosterExNum, rosterActiveSet());
 });
@@ -898,6 +941,7 @@ function evaluateDue() {
       ctrl.status = 'queued';
       run.queue.push(i);
       changed = true;
+      if (ctrl.pos === 1) playBell();   // ring only when position 1's timer hits 0
     }
   });
   if (changed) { persistRun(); tryOpenModal(); }
