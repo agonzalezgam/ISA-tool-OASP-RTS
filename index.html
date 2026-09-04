@@ -409,58 +409,30 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  EXERCISE DATA  (from _ALG__Exercises_and_Sectors_Distribution_v2.xlsx)
-//  positions: {posNum: sectorName} — only lists positions actually used;
-//  some exercises skip position 5 by design (physical seating in the room).
+//  EXERCISE DATA  (from ALG_CAA_RTS_Exercises_Block_1B_only_Summary.xlsx)
+//  Block 1B — 14 First Implementation (FI-B) + 4 Maximum Deployment (MD).
+//  Training exercises (code contains FAM) are suspended by default.
+//  positions: {posNum: sectorName}; controllers = number of filled ATC positions.
 // ═══════════════════════════════════════════════════════════
 const EXERCISES = [
-  {n:1, code:'BASE-FAM-1-85', scenario:'As-Is', traffic:'C1 (85% 2026)', parallel:false, training:true, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'WEST', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
-  {n:2, code:'BASE-FAM-2-85', scenario:'As-Is', traffic:'C1 (85% 2026)', parallel:false, training:true, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'WEST', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
-  {n:3, code:'BASE-FAM-DL-1', scenario:'As-Is', traffic:'C2 (110% 2026)', parallel:false, training:true, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'WEST', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
-  {n:4, code:'BASE-FAM-DL-2', scenario:'As-Is', traffic:'C2 (110% 2026)', parallel:false, training:true, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'WEST', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
-  {n:5, code:'BASE-SIM-1-110', scenario:'As-Is', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:5, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO'}},
-  {n:6, code:'BASE-SIM-2-110', scenario:'As-Is', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:5, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO'}},
-  {n:7, code:'BASE-SIM-1-130', scenario:'As-Is', traffic:'C3 (130% 2026)', parallel:false, training:false, atcos:5, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO'}},
-  {n:8, code:'MD-N-FAM-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:true, training:true, atcos:8, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'SEEB (U&L)', 6:'WEST_LO', 7:'WEST_UP', 8:'NORTH', 9:'SEEB (U&L)'}},
-  {n:9, code:'MD-SUH-FAM-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:true, training:true, atcos:8, positions:{1:'SEEB_LO', 2:'SEEB_UP', 3:'SUH', 4:'ALPHA', 6:'SEEB_LO', 7:'SEEB_UP', 8:'SUH', 9:'ALPHA'}},
-  {n:10, code:'MD-CEN-FAM-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:true, training:true, atcos:8, positions:{1:'CENTRAL_LO', 2:'CENTRAL_UP', 3:'BRAVO', 4:'SEEB (U&L)', 6:'CENTRAL_LO', 7:'CENTRAL_UP', 8:'BRAVO', 9:'SEEB (U&L)'}},
-  {n:11, code:'MD-FAM-ALLN-NODL-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:false, training:true, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
-  {n:12, code:'MD-SIM-ALLN-NODL-80-1', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
-  {n:13, code:'MD-SIM-ALLN-NODL-80-2', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
-  {n:14, code:'MD-SIM-ALLN-NODL-80-3', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'BRAVO', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
-  {n:15, code:'MD-SIM-ALLN-NODL-80-4', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'BRAVO', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
-  {n:16, code:'MD-FAM-FRA/FUA-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:true, training:true, atcos:8, positions:{1:'SOUTH', 2:'MIDDLE', 3:'CENTRAL (U&L)', 4:'BRAVO', 6:'SOUTH', 7:'MIDDLE', 8:'CENTRAL (U&L)', 9:'BRAVO'}},
-  {n:17, code:'MD-SIM-ALLN-NODL-110-1', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
-  {n:18, code:'MD-SIM-ALLN-NODL-110-2', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
-  {n:19, code:'MD-SIM-ALLN-DL-80', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
-  {n:20, code:'MD-SIM-ALLN-DL-110-1', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
-  {n:21, code:'MD-SIM-ALLN-DL-110-2', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST_LO', 2:'WEST_UP', 3:'NORTH', 4:'ALPHA', 5:'SEEB_LO', 6:'SEEB_UP', 7:'CENTRAL_LO', 8:'CENTRAL_UP', 9:'SUH'}},
-  {n:22, code:'MD-FAM-ALLN-VM-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:false, training:true, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
-  {n:23, code:'MD-SIM-ALLN-VM-80-1', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
-  {n:24, code:'MD-SIM-ALLN-VM-80-2', scenario:'Maximum Deployment', traffic:'L2 (80% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
-  {n:25, code:'MD-SIM-ALLN-VM-110-1', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
-  {n:26, code:'MD-SIM-ALLN-VM-110-2', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
-  {n:27, code:'MD-SIM-ALLN-VM-130', scenario:'Maximum Deployment', traffic:'L4 (130% DDFS)', parallel:false, training:false, atcos:9, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
-  {n:28, code:'MD-FAM-DIN-FUA/FRA-65', scenario:'Maximum Deployment', traffic:'L1 (65% DDFS)', parallel:true, training:true, atcos:8, positions:{1:'SOUTH', 2:'MIDDLE', 3:'CENTRAL (U&L)', 4:'BRAVO', 6:'SOUTH', 7:'MIDDLE', 8:'CENTRAL (U&L)', 9:'BRAVO'}},
-  {n:29, code:'MD-SIM-DIN-FUA/FRA-110', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:true, training:false, atcos:8, positions:{1:'SOUTH', 2:'MIDDLE', 3:'CENTRAL (U&L)', 4:'BRAVO', 6:'SOUTH', 7:'MIDDLE', 8:'CENTRAL (U&L)', 9:'BRAVO'}},
-  {n:30, code:'MD-SIM-CONT-110-1', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB', 7:'SUH'}},
-  {n:31, code:'MD-SIM-CONT-110-2', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB', 7:'SUH'}},
-  {n:32, code:'MD-SIM-CONT-110-3', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB', 7:'SUH'}},
-  {n:33, code:'MD-SIM-CONT-110-4', scenario:'Maximum Deployment', traffic:'L3 (110% DDFS)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'SEEB', 7:'SUH'}},
-  {n:34, code:'FI-FAM-N-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:true, training:true, atcos:6, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 6:'WEST', 7:'NORTH', 8:'ALPHA'}},
-  {n:35, code:'FI-SIM-N-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:true, training:false, atcos:6, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 6:'WEST', 7:'NORTH', 8:'ALPHA'}},
-  {n:36, code:'FI-FAM-C-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:true, training:true, atcos:8, positions:{1:'CENTRAL', 2:'BRAVO', 3:'MIDDLE', 4:'SOUTH', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
-  {n:37, code:'FI-SIM-C-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:true, training:false, atcos:8, positions:{1:'CENTRAL', 2:'BRAVO', 3:'MIDDLE', 4:'SOUTH', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
-  {n:38, code:'FI-FAM-ALL-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:true, training:true, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
-  {n:39, code:'FI-SIM-ALL-1-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
-  {n:40, code:'FI-SIM-ALL-2-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
-  {n:41, code:'FI-SIM-ALL-3-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
-  {n:42, code:'FI-SIM-ALL-4-130', scenario:'First Implementation', traffic:'C3 (130% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
-  {n:43, code:'FI-SIM-ALL-5-130', scenario:'First Implementation', traffic:'C3 (130% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
-  {n:44, code:'FI-FAM-CDR-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:true, training:true, atcos:8, positions:{1:'BRAVO', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 6:'BRAVO', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
-  {n:45, code:'FI-SIM-CDR-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:true, training:false, atcos:8, positions:{1:'BRAVO', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 6:'BRAVO', 7:'NORTH', 8:'ALPHA', 9:'CENTRAL'}},
-  {n:46, code:'FI-FAM-T-CDR-85', scenario:'First Implementation', traffic:'C1 (85% 2026)', parallel:true, training:true, atcos:8, positions:{1:'SOUTH', 2:'MIDDLE', 3:'CENTRAL', 4:'BRAVO', 6:'SOUTH', 7:'MIDDLE', 8:'CENTRAL', 9:'BRAVO'}},
-  {n:47, code:'FI-SIM-T-CDR-110', scenario:'First Implementation', traffic:'C2 (110% 2026)', parallel:true, training:false, atcos:8, positions:{1:'SOUTH', 2:'MIDDLE', 3:'CENTRAL', 4:'BRAVO', 6:'SOUTH', 7:'MIDDLE', 8:'CENTRAL', 9:'BRAVO'}},
+  {n:1, code:'FI-B-FAM-N-85', scenario:'As-Is', traffic:'B1 (85% 2030)', parallel:true, training:true, atcos:6, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 6:'WEST', 7:'NORTH', 8:'ALPHA'}},
+  {n:2, code:'FI-B-SIM-N-110', scenario:'As-Is', traffic:'B2 (110% 2030)', parallel:true, training:false, atcos:6, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 6:'WEST', 7:'NORTH', 8:'ALPHA'}},
+  {n:3, code:'FI-B-FAM-C-85', scenario:'As-Is', traffic:'B1 (85% 2030)', parallel:true, training:true, atcos:8, positions:{1:'CENTRAL', 2:'BRAVO', 3:'MIDDLE', 4:'SOUTH', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:4, code:'FI-B-SIM-C-110', scenario:'As-Is', traffic:'B2 (110% 2030)', parallel:true, training:false, atcos:8, positions:{1:'CENTRAL', 2:'BRAVO', 3:'MIDDLE', 4:'SOUTH', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:5, code:'FI-B-FAM-ALL-85', scenario:'As-Is', traffic:'B1 (85% 2030)', parallel:false, training:true, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:6, code:'FI-B-SIM-ALL-1-85', scenario:'As-Is', traffic:'B2 (110% 2030)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:7, code:'FI-B-SIM-ALL-2-110', scenario:'As-Is', traffic:'B2 (110% 2030)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:8, code:'FI-B-SIM-ALL-3-110', scenario:'As-Is', traffic:'B2 (110% 2030)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:9, code:'FI-B-SIM-ALL-4-130', scenario:'As-Is', traffic:'B3 (130% 2030)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:10, code:'FI-B-SIM-ALL-5-130', scenario:'As-Is', traffic:'B3 (130% 2030)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:11, code:'FI-B-SIM-ALL-6-130-CPDLC', scenario:'CPDLC', traffic:'B3 (130% 2030)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:12, code:'FI-B-FAM-noCDR-85', scenario:'As-Is', traffic:'B1 (85% 2030)', parallel:true, training:true, atcos:8, positions:{1:'CENTRAL', 2:'BRAVO', 3:'MIDDLE', 4:'SOUTH', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:13, code:'FI-B-SIM-noCDR-110', scenario:'As-Is', traffic:'B2 (110% 2030)', parallel:true, training:false, atcos:8, positions:{1:'CENTRAL', 2:'BRAVO', 3:'MIDDLE', 4:'SOUTH', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:14, code:'FI-B-SIM-noCDR-130', scenario:'As-Is', traffic:'B3 (130% 2030)', parallel:true, training:false, atcos:8, positions:{1:'CENTRAL', 2:'BRAVO', 3:'MIDDLE', 4:'SOUTH', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:15, code:'MD-SIM-CONT-Weather-110', scenario:'CPDLC', traffic:'L2 (80% 2040)', parallel:false, training:false, atcos:9, positions:{1:'WEST (U&L)', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL (U&L)', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:16, code:'MD-SIM-CONT-Weather-130', scenario:'CPDLC', traffic:'L3 (110% 2040)', parallel:false, training:false, atcos:9, positions:{1:'WEST (U&L)', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL (U&L)', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:17, code:'MD-SIM-CONT-CPDLC-110', scenario:'CPDLC', traffic:'L3 (110% 2040)', parallel:false, training:false, atcos:9, positions:{1:'WEST (U&L)', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL (U&L)', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:18, code:'MD-SIM-CONT-CPDLC-130', scenario:'CPDLC', traffic:'L4 (130% 2040)', parallel:false, training:false, atcos:9, positions:{1:'WEST (U&L)', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL (U&L)', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
 ];
 const EX_BY_NUM = {};
 EXERCISES.forEach(e => EX_BY_NUM[e.n] = e);
@@ -487,7 +459,7 @@ function lsSet(key, val) {
 //  the link will then sync automatically — no per-tablet setup.
 //  (A tablet can still override it in Settings if ever needed.)
 // ═══════════════════════════════════════════════════════════
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzkxNgHmMZe32BwgQmxf1J-H8FEI8zUD-OeoiD0wPLF7P5z0C_JzSABoToL7UimTBvG/exec';
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlY9QT6fwgx40HUFOHxIofo0y1W630Qq0-Nj8-M31yXrAfbJehARAfcRtg02jWnUyI/exec';
 const DEFAULT_INTERVAL_SEC = 300; // 300 = live 5-minute interval
 
 // ═══════════════════════════════════════════════════════════
@@ -505,7 +477,11 @@ if (config.includeTraining == null) { config.includeTraining = false; lsSet(K_CO
 // Effective sync URL: a tablet's manual override wins; otherwise the hardcoded default.
 function scriptUrl() {
   const o = (config.scriptUrlOverride || '').trim();
-  return o.length ? o : DEFAULT_SCRIPT_URL.trim();
+  if (o.length) return o;
+  const d = DEFAULT_SCRIPT_URL.trim();
+  // ignore the not-yet-filled placeholder so sync stays cleanly "local only"
+  if (!d || d.indexOf('PASTE_') === 0) return '';
+  return d;
 }
 // Effective station name: manual name wins; otherwise an auto unique id per tablet.
 function stationName() {
@@ -533,7 +509,7 @@ let currentAssessCtrl = null;
 //  HELPERS
 // ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
-//  BELL SOUND  (Web Audio — no audio file needed)
+//  BELL SOUND  (Web Audio — no audio file needed) — "ding-dong"
 // ═══════════════════════════════════════════════════════════
 let audioCtx = null;
 
@@ -574,6 +550,7 @@ function playBell() {
     });
   } catch (e) { /* never let a sound error break the assessment flow */ }
 }
+
 function genId() {
   if (crypto && crypto.randomUUID) return crypto.randomUUID();
   return 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2,10);
