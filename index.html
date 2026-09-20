@@ -409,10 +409,11 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  EXERCISE DATA  (from ALG_CAA_RTS_Exercises_Block_1B_only_Summary.xlsx)
-//  Block 1B — 14 First Implementation (FI-B) + 4 Maximum Deployment (MD).
-//  Training exercises (code contains FAM) are suspended by default.
-//  positions: {posNum: sectorName}; controllers = number of filled ATC positions.
+//  EXERCISE DATA  (Block 1B: base summary + extra exercises)
+//  28 exercises total. FI-B + MD from the base summary (n 1-18), plus extra
+//  FI-B / FI-A measurement exercises (n 19-28). Training exercises (code
+//  contains FAM) are suspended by default. positions: {posNum: sectorName};
+//  controllers = number of filled ATC positions.
 // ═══════════════════════════════════════════════════════════
 const EXERCISES = [
   {n:1, code:'FI-B-FAM-N-85', scenario:'As-Is', traffic:'B1 (85% 2030)', parallel:true, training:true, atcos:6, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 6:'WEST', 7:'NORTH', 8:'ALPHA'}},
@@ -433,6 +434,16 @@ const EXERCISES = [
   {n:16, code:'MD-SIM-CONT-Weather-130', scenario:'CPDLC', traffic:'L3 (110% 2040)', parallel:false, training:false, atcos:9, positions:{1:'WEST (U&L)', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL (U&L)', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
   {n:17, code:'MD-SIM-CONT-CPDLC-110', scenario:'CPDLC', traffic:'L3 (110% 2040)', parallel:false, training:false, atcos:9, positions:{1:'WEST (U&L)', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL (U&L)', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
   {n:18, code:'MD-SIM-CONT-CPDLC-130', scenario:'CPDLC', traffic:'L4 (130% 2040)', parallel:false, training:false, atcos:9, positions:{1:'WEST (U&L)', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL (U&L)', 5:'BRAVO', 6:'SEEB (U&L)', 7:'SUH', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:19, code:'FI-B-SIM-VertSplit-110', scenario:'First Implementation - Block B', traffic:'B2 (110% 2030)', parallel:false, training:false, atcos:8, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL_UP', 5:'CENTRAL_LO', 6:'BRAVO', 7:'MIDDLE', 8:'SOUTH'}},
+  {n:20, code:'FI-B-SIM-HorizSplit-110', scenario:'First Implementation - Block B', traffic:'B2 (110% 2030)', parallel:false, training:false, atcos:9, positions:{1:'MUSANDAM', 2:'SHINAS', 3:'NORTH', 4:'ALPHA', 5:'SUHAR', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
+  {n:21, code:'FI-B-SIM-noIndia-110', scenario:'First Implementation - Block B', traffic:'B2 (110% 2030)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:22, code:'FI-B-SIM-noFLAS-110', scenario:'First Implementation - Block B', traffic:'B2 (110% 2030)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:23, code:'FI-A-SIM-ALL-1-110', scenario:'First Implementation - Block A', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:24, code:'FI-A-SIM-ALL-2-110', scenario:'First Implementation - Block A', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:25, code:'FI-A-SIM-ALL-3-130', scenario:'First Implementation - Block A', traffic:'C3 (130% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:26, code:'FI-A-SIM-ALL-4-130-CPDLC', scenario:'First Implementation - Block A', traffic:'C3 (130% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:27, code:'FI-A-SIM-noFLAS-110', scenario:'First Implementation - Block A', traffic:'C2 (110% 2026)', parallel:false, training:false, atcos:7, positions:{1:'WEST', 2:'NORTH', 3:'ALPHA', 4:'CENTRAL', 5:'BRAVO', 6:'MIDDLE', 7:'SOUTH'}},
+  {n:28, code:'FI-B-SIM-HorizSplit-130', scenario:'First Implementation - Block B', traffic:'B3 (130% 2030)', parallel:false, training:false, atcos:9, positions:{1:'MUSANDAM', 2:'SHINAS', 3:'NORTH', 4:'ALPHA', 5:'SUHAR', 6:'CENTRAL', 7:'BRAVO', 8:'MIDDLE', 9:'SOUTH'}},
 ];
 const EX_BY_NUM = {};
 EXERCISES.forEach(e => EX_BY_NUM[e.n] = e);
